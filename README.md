@@ -1,88 +1,62 @@
-# Poker Coach PWA – Deployment Guide
+# Poker Coach PWA v2 — Deployment Guide
 
-## Dateien
-```
-poker-pwa/
-├── public/
-│   ├── index.html      ← Die gesamte App
-│   ├── manifest.json   ← PWA-Konfiguration
-│   ├── sw.js           ← Service Worker (Offline-Support)
-│   └── icons/
-│       ├── icon-192.png
-│       └── icon-512.png
-└── vercel.json         ← Vercel-Konfiguration
-```
+## Was neu ist in v2
+- **Komplette Hand-Simulation**: Preflop → Flop → Turn → River
+- **Sprachaufnahme vor jeder Entscheidung**: App fragt aktiv nach deiner Einschätzung
+- **Auswertung erst am Schluss**: Alle Entscheide werden nach der Hand gemeinsam analysiert
+- **Spielertyp-Kürzel am Tisch**: LAG, NIT, REG, CS, FI, TAG, REC sichtbar ohne Tab-Wechsel
+- **API-Key Fix**: Keine Validierung mehr — alle gültigen Keys werden akzeptiert
+- **CORS-Fix**: Header `anthropic-dangerous-direct-browser-access: true` für Browser-Anfragen
 
 ---
 
-## Deployment auf Vercel (kostenlos, ~5 Minuten)
+## Deployment auf Vercel
 
-### Option A – Via GitHub (empfohlen)
+### Existierendes Vercel-Projekt updaten (empfohlen)
+1. ZIP herunterladen und entpacken
+2. Dateien in dein bestehendes GitHub Repository kopieren (alte Dateien überschreiben)
+3. Git commit & push → Vercel deployed automatisch
 
-1. **GitHub Account** erstellen falls noch nicht vorhanden: https://github.com
-2. **Neues Repository** erstellen (z.B. `poker-coach`)
-3. **Dateien hochladen**: Den gesamten `poker-pwa` Ordner in das Repository
-4. **Vercel Account** erstellen: https://vercel.com (kostenlos, mit GitHub anmelden)
-5. **"New Project"** → GitHub Repository auswählen → **Deploy**
-6. Fertig — du bekommst eine URL wie `https://poker-coach-xxx.vercel.app`
-
-### Option B – Via Vercel CLI
-
-```bash
-npm install -g vercel
-cd poker-pwa
-vercel --prod
-```
+### Neu deployen
+1. GitHub Repository erstellen
+2. Alle Dateien hochladen
+3. Vercel: New Project → Import → Deploy
 
 ---
 
-## App auf iPhone installieren
-
-1. URL in **Safari** öffnen (nicht Chrome — nur Safari unterstützt PWA auf iOS)
-2. Unten auf das **Teilen-Symbol** tippen (Quadrat mit Pfeil nach oben)
-3. **"Zum Home-Bildschirm"** auswählen
-4. Name bestätigen → **Hinzufügen**
-
-Die App erscheint jetzt als Icon auf deinem Home-Screen und öffnet sich wie eine native App (ohne Browser-UI, Vollbild).
+## iPhone Installation
+1. URL in **Safari** öffnen
+2. Teilen-Symbol → "Zum Home-Bildschirm"
+3. Fertig
 
 ---
 
-## Sprachaufnahme einrichten
+## API-Key einrichten
+1. Settings-Tab (⚙ oben rechts) öffnen
+2. API-Key von https://console.anthropic.com eingeben
+3. "Speichern" tippen
+4. Key wird lokal gespeichert — grünes Häkchen bestätigt Speicherung
 
-Die App nutzt die **Web Speech API** von Safari/iOS.
-
-- Beim ersten Tippen auf "Gedanken aufnehmen" fragt iOS nach **Mikrofon-Erlaubnis** → Erlauben
-- Sprache wird **on-device** transkribiert (kein externer Service)
-- Funktioniert auf Deutsch (`de-DE`)
-
-Falls Mikrofon nicht verfügbar: Text wird nicht automatisch transkribiert, aber die Hand-Situation wird trotzdem an Claude gesendet.
+**Wichtig**: Der Key braucht keine spezielle Validierung mehr — gib ihn einfach so ein wie er ist.
 
 ---
 
-## API-Key für automatische Analyse
-
-Damit die KI-Analyse direkt in der App funktioniert:
-
-1. **Anthropic API-Key** holen: https://console.anthropic.com
-2. In der App: Eine Aktion ausführen (Fold/Call/Raise)
-3. Im erscheinenden Dialog den API-Key eingeben
-4. Key wird **lokal auf dem Gerät** gespeichert (localStorage)
-
-**Kosten**: Jede Hand-Analyse kostet ca. 0.002–0.005 USD (sehr wenig).
-
-> **Sicherheitshinweis**: Der API-Key wird nur auf deinem Gerät gespeichert und nur für Anfragen an api.anthropic.com verwendet. Er wird nie an andere Server gesendet.
+## Spielablauf
+1. **Sprachaufnahme**: Bevor du handelst, fragt die App nach deiner Einschätzung
+   - Roten Knopf tippen → sprechen → nochmal tippen zum Stoppen
+   - Automatischer Wechsel zur Aktionsauswahl
+   - Oder "Überspringen" für direkte Aktion
+2. **Aktion wählen**: Fold / Call / Raise mit Slider
+3. **Nächste Strasse**: App simuliert Gegner-Reaktionen und zeigt nächste Karten
+4. **Auswertung**: Nach River (oder Fold) erscheint die komplette KI-Analyse aller Entscheide
 
 ---
 
-## Funktionen
-
-- ♠ Randomisierte Hand-Szenarien (Hand, Position, Stack, Spielertypen)
-- ♣ 9 Spielerarchetypen mit realistischen VPIP/PFR/AF Stats
-- ♥ Positionsbasierte Entscheidungslogik (Open, Facing Raise, Facing 3-Bet)
-- ♦ Denkprozess-Checkliste (5 Punkte)
-- 🎤 Sprachaufnahme mit Web Speech API
-- 🤖 KI-Analyse via Claude (Sizing, Ranges, Spielertypen, Denkprozess)
-- 📊 Skill-Tracking über Sessions
-- 📝 Hand-Verlauf mit Scores
-- 🌙 Dark Mode Support
-- 📱 Offline-fähig (Service Worker)
+## Spielertyp-Kürzel am Tisch
+- **LAG** = Loose Aggressive (Maniac)
+- **NIT** = Nit / Super Nit
+- **REG** = Aggro Reg
+- **CS** = Calling Station
+- **FI** = Passive Fish
+- **TAG** = Tight Reg
+- **REC** = Recreational
