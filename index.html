@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Poker Coach">
@@ -11,903 +11,946 @@
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <title>Poker Coach</title>
   <style>
-    :root {
-      --green-dark:#1a4f2a; --green-felt:#1d5c35; --green-border:#2a7040;
-      --gold:#ffd700;
-      --bg:#f5f5f0; --bg2:#eeede8; --bg3:#e2e1db;
-      --card:#ffffff; --text:#1a1a1a; --text2:#555; --text3:#999;
-      --border:rgba(0,0,0,0.10); --border2:rgba(0,0,0,0.20);
-      --blue-bg:#e6f1fb; --blue-text:#0c447c; --blue-border:#85b7eb;
-      --green-bg:#e1f5ee; --green-text:#085041; --green-b2:#5dcaa5;
-      --red-bg:#fcebeb; --red-text:#791f1f; --red-b2:#f09595;
-      --amber-bg:#faeeda; --amber-text:#633806;
-      --r:12px; --r-sm:8px;
-    }
-    @media(prefers-color-scheme:dark){
-      :root{
-        --bg:#161616; --bg2:#1e1e1e; --bg3:#282828;
-        --card:#222; --text:#f0f0f0; --text2:#aaa; --text3:#666;
-        --border:rgba(255,255,255,0.09); --border2:rgba(255,255,255,0.20);
-        --blue-bg:#0b2540; --blue-text:#7ab4f0;
-        --green-bg:#0a2b1e; --green-text:#4ecaa0;
-        --red-bg:#2b0f0f; --red-text:#e08080;
-        --amber-bg:#2a1a04; --amber-text:#e0a060;
-      }
-    }
-    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-    html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;background:var(--bg);color:var(--text)}
-    #app{display:flex;flex-direction:column;height:100%;height:100dvh}
-    /* NAV */
-    #topbar{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;padding-top:max(8px,env(safe-area-inset-top));background:var(--card);border-bottom:0.5px solid var(--border);flex-shrink:0}
-    #topbar-title{font-size:14px;font-weight:700;color:var(--text)}
-    #topbar-right{display:flex;gap:6px}
-    .tb-btn{font-size:11px;padding:5px 10px;border:0.5px solid var(--border2);border-radius:20px;background:transparent;color:var(--text2);cursor:pointer}
-    .tb-btn.active{background:var(--blue-bg);color:var(--blue-text);border-color:var(--blue-border)}
-    /* CONTENT */
-    #content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
-    .screen{display:none}.screen.active{display:block}
-    /* TABLE */
-    .table-wrap{padding:10px;background:var(--bg2)}
-    .felt-outer{background:var(--green-dark);border-radius:14px;padding:10px;position:relative}
-    .felt-ellipse{background:var(--green-felt);border-radius:50%;width:100%;padding-top:52%;position:relative;border:3px solid var(--green-border)}
-    .felt-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
-    .seats-layer{position:absolute;inset:0;pointer-events:none}
-    /* SEATS */
-    .seat{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:1px;pointer-events:auto}
-    .ava{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;position:relative;border:2px solid rgba(255,255,255,0.2);flex-shrink:0}
-    .pos-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:6.5px;font-weight:700;padding:1px 4px;border-radius:4px;white-space:nowrap;letter-spacing:0.2px}
-    .type-badge{position:absolute;bottom:-11px;left:50%;transform:translateX(-50%);font-size:6px;font-weight:700;padding:1px 4px;border-radius:3px;white-space:nowrap;color:rgba(255,255,255,0.85);background:rgba(0,0,0,0.45)}
-    .d-chip{position:absolute;top:-3px;right:-3px;width:12px;height:12px;border-radius:50%;background:#e8e0c0;border:1.5px solid #bba060;font-size:6px;font-weight:700;color:#5a4010;display:flex;align-items:center;justify-content:center}
-    .seat-name{font-size:6.5px;color:rgba(255,255,255,0.65);text-align:center;white-space:nowrap;max-width:50px;overflow:hidden;text-overflow:ellipsis}
-    .seat-stack{font-size:7px;color:var(--gold);font-weight:600}
-    .seat-bet{font-size:6.5px;background:rgba(0,0,0,0.55);color:var(--gold);padding:1px 3px;border-radius:3px}
-    .seat.is-hero .ava{border-color:var(--gold);border-width:2.5px}
-    .seat.is-folded .ava{opacity:0.28}
-    .seat.is-to-act .ava{border-color:#00e87a;box-shadow:0 0 0 3px rgba(0,232,122,0.25)}
-    .hole{display:flex;gap:2px;margin-top:2px}
-    .hcard{width:24px;height:34px;border-radius:3px;background:#fff;border:0.5px solid #ccc;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;font-weight:700;gap:0;line-height:1}
-    .hcard-back{width:24px;height:34px;border-radius:3px;background:#1a4a8a;border:0.5px solid #0d3366}
-    /* COMMUNITY */
-    .ccard{width:28px;height:40px;border-radius:4px;background:#fff;border:0.5px solid #bbb;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;font-weight:700;line-height:1}
-    .ccard-ph{width:28px;height:40px;border-radius:4px;border:1.5px dashed rgba(255,255,255,0.2)}
-    /* STREET BANNER */
-    .street-banner{margin:0 10px 6px;padding:6px 12px;background:var(--bg2);border-radius:var(--r-sm);border:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-    .street-label{font-size:11px;font-weight:700;color:var(--text)}
-    .street-pot{font-size:11px;color:var(--text2)}
-    .street-actions-done{font-size:10px;color:var(--text3)}
-    /* SPEECH PROMPT - the key new UI */
-    .speech-prompt{margin:0 10px 6px;border:0.5px solid var(--border2);border-radius:var(--r);background:var(--card);overflow:hidden}
-    .sp-head{padding:10px 14px;background:var(--amber-bg);border-bottom:0.5px solid var(--border)}
-    .sp-head-title{font-size:13px;font-weight:700;color:var(--amber-text)}
-    .sp-head-sub{font-size:11px;color:var(--amber-text);opacity:0.75;margin-top:2px}
-    .sp-body{padding:10px 14px}
-    .sp-context{font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:10px;padding:8px;background:var(--bg2);border-radius:var(--r-sm)}
-    .sp-questions{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
-    .sp-q{font-size:11px;color:var(--text2);padding:2px 0;display:flex;gap:6px}
-    .sp-q::before{content:'→';color:var(--amber-text);flex-shrink:0}
-    .voice-btn{width:100%;padding:12px;border-radius:var(--r-sm);border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background 0.15s}
-    .voice-btn.recording{background:var(--red-bg);border-color:var(--red-b2);color:var(--red-text)}
-    .voice-btn.done{background:var(--green-bg);border-color:var(--green-b2);color:var(--green-text)}
-    .rec-dot{width:10px;height:10px;border-radius:50%;background:#e24b4a;flex-shrink:0}
-    .recording .rec-dot{animation:blink 0.8s infinite}
-    @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
-    .done-dot{width:10px;height:10px;border-radius:50%;background:#1d9e75;flex-shrink:0}
-    .sp-transcript{margin-top:8px;font-size:11px;color:var(--text);font-style:italic;line-height:1.5;padding:8px;background:var(--bg3);border-radius:6px;display:none}
-    .sp-transcript.show{display:block}
-    .skip-link{display:block;text-align:center;font-size:11px;color:var(--text3);padding:6px;cursor:pointer;text-decoration:underline}
-    /* ACTION PANEL */
-    .action-panel{margin:0 10px 10px;border:0.5px solid var(--border);border-radius:var(--r);background:var(--card);overflow:hidden}
-    .ap-head{padding:8px 14px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:6px;background:var(--bg2)}
-    .ap-title{font-size:12px;font-weight:700;color:var(--text);flex:1}
-    .ap-pill{font-size:10px;background:var(--bg3);color:var(--text2);padding:2px 7px;border-radius:10px;white-space:nowrap}
-    /* CHECKLIST */
-    .cl-wrap{padding:8px 14px;border-bottom:0.5px solid var(--border)}
-    .cl-label{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px}
-    .cl-item{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text2);cursor:pointer;padding:3px 0;user-select:none}
-    .cl-cb{width:16px;height:16px;border:1.5px solid var(--border2);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
-    .cl-cb.on{background:#1d9e75;border-color:#1d9e75}
-    .cl-cb.on::after{content:'';display:block;width:8px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translateY(-1px)}
-    .cl-item.done span{text-decoration:line-through;opacity:0.45}
-    /* BET */
-    .bet-wrap{padding:8px 14px;border-bottom:0.5px solid var(--border)}
-    .bet-label{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px}
-    .bet-row{display:flex;align-items:center;gap:10px}
-    input[type=range]{flex:1;height:4px;accent-color:#1d9e75;cursor:pointer}
-    .bet-val{font-size:15px;font-weight:700;color:var(--text);min-width:62px;text-align:right}
-    .bet-presets{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
-    .bp{font-size:10px;padding:4px 9px;border-radius:6px;border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer}
-    .bp:active{background:var(--bg3)}
-    /* ACTION BTNS */
-    .act-btns{padding:8px 14px;display:flex;gap:6px}
-    .act{flex:1;padding:12px 4px;font-size:12px;font-weight:700;border-radius:var(--r-sm);border:0.5px solid var(--border2);background:transparent;cursor:pointer;color:var(--text)}
-    .act:active{opacity:0.7}
-    .act.fold{color:#a32d2d;border-color:#f09595}
-    .act.call{color:var(--blue-text);border-color:var(--blue-border);background:var(--blue-bg)}
-    .act.raise{color:var(--green-text);border-color:var(--green-b2);background:var(--green-bg)}
-    .sit-info{padding:4px 14px 10px;font-size:9px;color:var(--text3);display:flex;gap:10px;flex-wrap:wrap}
-    /* ACTION LOG */
-    .log-wrap{padding:6px 14px;border-bottom:0.5px solid var(--border);background:var(--bg2)}
-    .log-lbl{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:3px}
-    .log-entry{font-size:10px;color:var(--text2);display:flex;gap:6px;line-height:1.5}
-    .log-pos{font-weight:700;color:var(--text);min-width:58px;flex-shrink:0}
-    .c-fold{color:#a32d2d}.c-call{color:#185fa5}.c-raise{color:#085041}
-    /* STATS */
-    .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px}
-    .stat-c{background:var(--bg2);border-radius:var(--r-sm);padding:12px}
-    .stat-l{font-size:10px;color:var(--text2);margin-bottom:4px}
-    .stat-v{font-size:22px;font-weight:700;color:var(--text)}
-    .stat-s{font-size:10px;color:var(--text3);margin-top:2px}
-    .sec-title{padding:10px 14px 4px;font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px}
-    .skill-row{display:flex;align-items:center;gap:8px;padding:4px 14px}
-    .skill-nm{font-size:11px;color:var(--text2);width:112px;flex-shrink:0}
-    .skill-bg{flex:1;height:7px;background:var(--bg3);border-radius:4px}
-    .skill-fill{height:100%;border-radius:4px;transition:width 0.5s}
-    .skill-pc{font-size:10px;color:var(--text3);width:30px;text-align:right}
-    /* HISTORY */
-    .hist-item{padding:10px 14px;border-bottom:0.5px solid var(--border)}
-    .hist-score{font-size:11px;padding:2px 8px;border-radius:8px;font-weight:700}
-    /* SETTINGS */
-    .settings-item{padding:14px;border-bottom:0.5px solid var(--border);display:flex;flex-direction:column;gap:6px}
-    .settings-label{font-size:13px;font-weight:600;color:var(--text)}
-    .settings-sub{font-size:11px;color:var(--text2)}
-    .settings-input{width:100%;padding:10px;border-radius:var(--r-sm);border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:13px}
-    .settings-btn{padding:10px 20px;border-radius:var(--r-sm);border:none;background:#1d9e75;color:#fff;font-size:13px;font-weight:700;cursor:pointer}
-    .settings-status{font-size:11px;padding:4px 0}
-    /* REVIEW MODAL */
-    #review-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:200;overflow-y:auto;padding:16px 12px;padding-bottom:max(20px,env(safe-area-inset-bottom))}
-    #review-overlay.show{display:block}
-    .rv-card{background:var(--card);border-radius:var(--r);overflow:hidden;max-width:500px;margin:0 auto}
-    .rv-head{padding:14px 16px;background:var(--bg2);border-bottom:0.5px solid var(--border)}
-    .rv-title{font-size:14px;font-weight:700;color:var(--text)}
-    .rv-sub{font-size:11px;color:var(--text2);margin-top:2px}
-    .rv-scores-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-    .rv-score-pill{font-size:12px;padding:4px 12px;border-radius:10px;font-weight:700}
-    .rv-body{padding:14px 16px}
-    .rv-decision{margin-bottom:14px;padding:10px 12px;border-radius:var(--r-sm);border:0.5px solid var(--border)}
-    .rv-dec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
-    .rv-dec-street{font-size:11px;font-weight:700;color:var(--text)}
-    .rv-dec-score{font-size:11px;padding:2px 8px;border-radius:8px;font-weight:700}
-    .rv-dec-action{font-size:11px;color:var(--text2)}
-    .rv-dec-fb{font-size:12px;color:var(--text2);line-height:1.6;margin-top:6px;padding-top:6px;border-top:0.5px solid var(--border)}
-    .rv-section{margin-bottom:12px}
-    .rv-sec-t{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
-    .rv-sec-body{font-size:12px;color:var(--text2);line-height:1.65}
-    .rv-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px}
-    .rv-tag{font-size:10px;padding:3px 8px;border-radius:8px;background:var(--bg2);color:var(--text2)}
-    .rv-btns{display:flex;gap:8px;margin-top:14px}
-    .rv-btn{flex:1;padding:12px;border-radius:var(--r-sm);font-size:13px;font-weight:700;cursor:pointer;border:0.5px solid var(--border2);background:var(--bg2);color:var(--text)}
-    .rv-btn.primary{background:#1d9e75;color:#fff;border-color:#1d9e75}
-    .loading-state{padding:40px 20px;text-align:center;font-size:13px;color:var(--text2)}
-    .spinner{display:inline-block;width:22px;height:22px;border:2.5px solid var(--border2);border-top-color:#1d9e75;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:12px}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    /* BOTTOM NAV */
-    #bottomnav{display:flex;gap:0;border-top:0.5px solid var(--border);background:var(--card);flex-shrink:0;padding-bottom:max(8px,env(safe-area-inset-bottom))}
-    .bn-btn{flex:1;padding:10px 4px 6px;font-size:10px;font-weight:600;color:var(--text3);background:transparent;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
-    .bn-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8}
-    .bn-btn.active{color:var(--blue-text)}
-    .safe-pad{padding-bottom:max(12px,env(safe-area-inset-bottom))}
-    /* NEW HAND BTN */
-    .new-hand-btn{margin:0 12px 12px;width:calc(100%-24px);display:block;padding:14px;font-size:14px;font-weight:700;border-radius:var(--r);border:none;background:#1d9e75;color:#fff;cursor:pointer;text-align:center}
-    .new-hand-btn:active{opacity:0.85}
+:root {
+  --gd:#1a4f2a; --gf:#1d5c35; --gb:#2a7040; --gold:#ffd700;
+  --bg:#f4f3ee; --bg2:#eceae4; --bg3:#e0dfd8;
+  --card:#fff; --text:#1a1a1a; --t2:#555; --t3:#999;
+  --bo:rgba(0,0,0,0.10); --bo2:rgba(0,0,0,0.22);
+  --blue:#0c447c; --bluebg:#e6f1fb; --bluebo:#85b7eb;
+  --green:#085041; --greenbg:#e1f5ee; --greenbo:#5dcaa5;
+  --red:#791f1f; --redbg:#fcebeb; --redbo:#f09595;
+  --amber:#633806; --amberbg:#faeeda; --amberbo:#e0a060;
+  --r:12px; --rs:8px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#161616;--bg2:#1e1e1e;--bg3:#282828;
+  --card:#222;--text:#f0f0f0;--t2:#aaa;--t3:#666;
+  --bo:rgba(255,255,255,0.09);--bo2:rgba(255,255,255,0.22);
+  --bluebg:#0b2540;--blue:#7ab4f0;
+  --greenbg:#0a2b1e;--green:#4ecaa0;
+  --redbg:#2b0f0f;--red:#e08080;
+  --amberbg:#2a1a04;--amber:#e0a060;
+}}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;background:var(--bg);color:var(--text)}
+#app{display:flex;flex-direction:column;height:100%;height:100dvh}
+
+/* TOPBAR */
+#topbar{display:flex;align-items:center;gap:10px;padding:max(10px,env(safe-area-inset-top)) 14px 8px;background:var(--card);border-bottom:0.5px solid var(--bo);flex-shrink:0}
+.tb-title{font-size:14px;font-weight:700;color:var(--text);flex:1}
+/* blind pill always visible */
+#blind-pill{font-size:11px;font-weight:700;color:var(--blue);background:var(--bluebg);padding:3px 10px;border-radius:12px;white-space:nowrap;border:0.5px solid var(--bluebo)}
+.tb-btn{font-size:11px;padding:5px 10px;border:0.5px solid var(--bo2);border-radius:20px;background:transparent;color:var(--t2);cursor:pointer}
+
+/* CONTENT */
+#content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:64px}
+.screen{display:none}.screen.active{display:block}
+
+/* TABLE */
+.table-wrap{padding:10px;background:var(--bg2)}
+.felt-outer{background:var(--gd);border-radius:14px;padding:10px;position:relative}
+.felt-ell{background:var(--gf);border-radius:50%;width:100%;padding-top:52%;position:relative;border:3px solid var(--gb)}
+.felt-ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+#seats-layer{position:absolute;inset:0;pointer-events:none}
+
+/* SEATS */
+.seat{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:0;pointer-events:auto}
+.ava{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;position:relative;border:2px solid rgba(255,255,255,0.2)}
+.pos-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:6.5px;font-weight:700;padding:1px 4px;border-radius:4px;white-space:nowrap}
+.type-badge{position:absolute;bottom:-11px;left:50%;transform:translateX(-50%);font-size:6px;font-weight:700;padding:1px 4px;border-radius:3px;color:rgba(255,255,255,0.9);background:rgba(0,0,0,0.5);white-space:nowrap}
+.d-chip{position:absolute;top:-3px;right:-4px;width:13px;height:13px;border-radius:50%;background:#e8e0c0;border:1.5px solid #bba060;font-size:6px;font-weight:700;color:#5a4010;display:flex;align-items:center;justify-content:center}
+.sname{font-size:6.5px;color:rgba(255,255,255,0.7);text-align:center;white-space:nowrap;max-width:52px;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.sstack{font-size:7px;color:var(--gold);font-weight:600}
+/* BET CHIP next to player */
+.bet-chip{font-size:7px;background:rgba(0,0,0,0.65);color:var(--gold);padding:2px 5px;border-radius:4px;margin-top:2px;font-weight:700;white-space:nowrap;border:1px solid rgba(255,215,0,0.3)}
+.hcard{width:24px;height:34px;border-radius:3px;background:#fff;border:0.5px solid #ccc;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;font-weight:700;line-height:1.1}
+.hcard-back{width:24px;height:34px;border-radius:3px;background:#1a4a8a;border:0.5px solid #0d3366}
+.seat.folded .ava{opacity:0.28}
+.seat.folded .sname,.seat.folded .sstack{opacity:0.4}
+.seat.is-hero .ava{border-color:var(--gold);border-width:2.5px}
+.seat.is-active .ava{border-color:#00e87a;box-shadow:0 0 0 3px rgba(0,232,122,0.22)}
+
+/* COMMUNITY CARDS */
+.cc{width:28px;height:40px;border-radius:4px;background:#fff;border:0.5px solid #bbb;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;font-weight:700;line-height:1.1}
+.cc-ph{width:28px;height:40px;border-radius:4px;border:1.5px dashed rgba(255,255,255,0.2)}
+
+/* ── SITUATION PANEL ──
+   Always visible. Shows: blinds, pot, street, all actions this street,
+   and who still has to act.
+*/
+.sit-panel{margin:6px 10px 0;background:var(--card);border:0.5px solid var(--bo);border-radius:var(--r);overflow:hidden}
+.sit-header{padding:8px 12px;background:var(--bg2);border-bottom:0.5px solid var(--bo);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sit-pot{font-size:14px;font-weight:700;color:var(--text)}
+.sit-street{font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;background:var(--bg3);color:var(--t2)}
+.sit-hero-hand{font-size:11px;font-weight:700;color:var(--blue);padding:2px 8px;border-radius:8px;background:var(--bluebg)}
+.sit-body{padding:8px 12px}
+.sit-desc{font-size:12px;color:var(--text);font-weight:600;margin-bottom:6px;line-height:1.4}
+.sit-log-title{font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px}
+.sit-log-entry{font-size:11px;display:flex;gap:6px;line-height:1.6}
+.log-who{font-weight:700;color:var(--text);min-width:70px;flex-shrink:0}
+.c-fold{color:#a32d2d}.c-call{color:#185fa5}.c-raise{color:#085041}
+.sit-no-action{font-size:11px;color:var(--t3)}
+/* Proceed button */
+.proceed-btn{display:block;width:100%;margin-top:10px;padding:11px;border-radius:var(--rs);border:none;background:var(--amberbg);color:var(--amber);font-size:13px;font-weight:700;cursor:pointer;text-align:center}
+.proceed-btn:active{opacity:0.8}
+
+/* ── SPEECH PANEL ── */
+.speech-panel{margin:6px 10px 0;background:var(--card);border:0.5px solid var(--amberbo);border-radius:var(--r);overflow:hidden;display:none}
+.sp-head{padding:10px 14px;background:var(--amberbg);display:flex;align-items:center;justify-content:space-between}
+.sp-title{font-size:12px;font-weight:700;color:var(--amber)}
+.sp-skip{font-size:11px;color:var(--amber);text-decoration:underline;cursor:pointer}
+.sp-body{padding:10px 14px}
+.sp-qs{display:flex;flex-direction:column;gap:3px;margin-bottom:10px}
+.sp-q{font-size:11px;color:var(--t2);display:flex;gap:5px}
+.sp-q::before{content:'→';color:var(--amber);flex-shrink:0}
+.voice-btn{width:100%;padding:12px 14px;border-radius:var(--rs);border:0.5px solid var(--bo2);background:var(--bg2);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:10px}
+.voice-btn.rec{background:var(--redbg);border-color:var(--redbo);color:var(--red)}
+.voice-btn.done{background:var(--greenbg);border-color:var(--greenbo);color:var(--green)}
+.rec-dot{width:10px;height:10px;border-radius:50%;background:#e24b4a;flex-shrink:0}
+.rec.rec-dot,.voice-btn.rec .rec-dot{animation:bl 0.8s infinite}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:0.15}}
+.sp-tx{margin-top:8px;font-size:11px;color:var(--text);font-style:italic;line-height:1.5;padding:8px;background:var(--bg3);border-radius:6px;display:none}
+.sp-tx.show{display:block}
+.to-action-btn{display:none;width:100%;margin-top:8px;padding:11px;border-radius:var(--rs);border:none;background:#1d9e75;color:#fff;font-size:13px;font-weight:700;cursor:pointer}
+.to-action-btn.show{display:block}
+
+/* ── ACTION PANEL ── */
+.action-panel{margin:6px 10px 0;background:var(--card);border:0.5px solid var(--bo);border-radius:var(--r);overflow:hidden;display:none}
+.ap-head{padding:8px 14px;background:var(--bg2);border-bottom:0.5px solid var(--bo);display:flex;align-items:center;gap:6px}
+.ap-title{font-size:12px;font-weight:700;color:var(--text);flex:1}
+.ap-pill{font-size:10px;background:var(--bg3);color:var(--t2);padding:2px 7px;border-radius:10px;white-space:nowrap}
+/* checklist */
+.cl-wrap{padding:8px 14px;border-bottom:0.5px solid var(--bo)}
+.cl-lbl{font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.cl-item{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--t2);cursor:pointer;padding:3px 0;user-select:none}
+.cl-cb{width:16px;height:16px;border:1.5px solid var(--bo2);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.cl-cb.on{background:#1d9e75;border-color:#1d9e75}
+.cl-cb.on::after{content:'';display:block;width:8px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translateY(-1px)}
+.cl-item.done span{text-decoration:line-through;opacity:0.45}
+/* bet */
+.bet-wrap{padding:8px 14px;border-bottom:0.5px solid var(--bo)}
+.bet-lbl{font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.bet-row{display:flex;align-items:center;gap:10px}
+input[type=range]{flex:1;height:4px;accent-color:#1d9e75;cursor:pointer}
+.bet-val{font-size:15px;font-weight:700;color:var(--text);min-width:68px;text-align:right}
+.presets{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+.bp{font-size:10px;padding:4px 9px;border-radius:6px;border:0.5px solid var(--bo);background:var(--bg2);color:var(--t2);cursor:pointer}
+.bp:active{background:var(--bg3)}
+/* action buttons */
+.act-btns{padding:8px 14px;display:flex;gap:6px}
+.act{flex:1;padding:12px 4px;font-size:12px;font-weight:700;border-radius:var(--rs);border:0.5px solid var(--bo2);background:transparent;cursor:pointer;color:var(--text)}
+.act:active{opacity:0.7}
+.act.fold{color:#a32d2d;border-color:#f09595}
+.act.call{color:var(--blue);border-color:var(--bluebo);background:var(--bluebg)}
+.act.raise{color:var(--green);border-color:var(--greenbo);background:var(--greenbg)}
+.act.check{color:var(--t2);border-color:var(--bo2)}
+.sit-foot{padding:4px 14px 10px;font-size:9px;color:var(--t3);display:flex;gap:10px;flex-wrap:wrap}
+
+/* STATS / HISTORY / SETTINGS */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px}
+.stat-c{background:var(--bg2);border-radius:var(--rs);padding:12px}
+.stat-l{font-size:10px;color:var(--t2);margin-bottom:4px}
+.stat-v{font-size:22px;font-weight:700;color:var(--text)}
+.stat-s{font-size:10px;color:var(--t3);margin-top:2px}
+.sec-title{padding:10px 14px 4px;font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:0.5px}
+.skill-row{display:flex;align-items:center;gap:8px;padding:4px 14px}
+.skill-nm{font-size:11px;color:var(--t2);width:112px;flex-shrink:0}
+.skill-bg{flex:1;height:7px;background:var(--bg3);border-radius:4px}
+.skill-fill{height:100%;border-radius:4px;transition:width 0.5s}
+.skill-pc{font-size:10px;color:var(--t3);width:30px;text-align:right}
+.hist-item{padding:10px 14px;border-bottom:0.5px solid var(--bo)}
+.settings-item{padding:14px;border-bottom:0.5px solid var(--bo);display:flex;flex-direction:column;gap:7px}
+.settings-lbl{font-size:13px;font-weight:700;color:var(--text)}
+.settings-sub{font-size:11px;color:var(--t2);line-height:1.5}
+.settings-input{width:100%;padding:10px;border-radius:var(--rs);border:0.5px solid var(--bo2);background:var(--bg2);color:var(--text);font-size:13px}
+.settings-btn{padding:10px 20px;border-radius:var(--rs);border:none;background:#1d9e75;color:#fff;font-size:13px;font-weight:700;cursor:pointer;align-self:flex-start}
+
+/* REVIEW OVERLAY */
+#rv-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:200;overflow-y:auto;padding:14px 12px;padding-bottom:max(20px,env(safe-area-inset-bottom))}
+#rv-overlay.show{display:block}
+.rv-card{background:var(--card);border-radius:var(--r);overflow:hidden;max-width:500px;margin:0 auto}
+.rv-head{padding:14px 16px;background:var(--bg2);border-bottom:0.5px solid var(--bo)}
+.rv-title{font-size:14px;font-weight:700;color:var(--text)}
+.rv-sub{font-size:11px;color:var(--t2);margin-top:2px}
+.rv-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.rv-pill{font-size:11px;padding:3px 10px;border-radius:10px;font-weight:700}
+.rv-body{padding:14px 16px}
+.rv-dec{margin-bottom:12px;padding:10px 12px;border-radius:var(--rs);border:0.5px solid var(--bo);background:var(--bg2)}
+.rv-dec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;gap:8px}
+.rv-dec-st{font-size:11px;font-weight:700;color:var(--text)}
+.rv-dec-sc{font-size:11px;padding:2px 8px;border-radius:8px;font-weight:700}
+.rv-dec-act{font-size:11px;color:var(--t2);margin-bottom:5px}
+.rv-dec-fb{font-size:12px;color:var(--t2);line-height:1.6;padding-top:5px;border-top:0.5px solid var(--bo)}
+.rv-sec{margin-bottom:10px}
+.rv-sec-t{font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px}
+.rv-sec-b{font-size:12px;color:var(--t2);line-height:1.65}
+.rv-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.rv-tag{font-size:10px;padding:3px 8px;border-radius:8px;background:var(--bg2);color:var(--t2)}
+.rv-btns{display:flex;gap:8px;margin-top:14px}
+.rv-btn{flex:1;padding:12px;border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer;border:0.5px solid var(--bo2);background:var(--bg2);color:var(--text)}
+.rv-btn.primary{background:#1d9e75;color:#fff;border:none}
+.loading{padding:40px 20px;text-align:center;font-size:13px;color:var(--t2)}
+.spinner{display:inline-block;width:22px;height:22px;border:2.5px solid var(--bo2);border-top-color:#1d9e75;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* BOTTOM NAV */
+#bottomnav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:0.5px solid var(--bo);padding-bottom:max(8px,env(safe-area-inset-bottom));z-index:100}
+.bn{flex:1;padding:10px 4px 6px;font-size:10px;font-weight:600;color:var(--t3);background:transparent;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+.bn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8}
+.bn.active{color:var(--blue)}
   </style>
 </head>
 <body>
 <div id="app">
+
   <div id="topbar">
-    <span id="topbar-title">Poker Coach</span>
-    <div id="topbar-right">
-      <button class="tb-btn" onclick="go('settings')">⚙ Settings</button>
-    </div>
+    <span class="tb-title">Poker Coach</span>
+    <span id="blind-pill">—</span>
+    <button class="tb-btn" onclick="go('settings')">⚙</button>
   </div>
 
   <div id="content">
 
-    <!-- GAME SCREEN -->
+    <!-- ══ GAME ══ -->
     <div class="screen active" id="screen-game">
+
+      <!-- TABLE -->
       <div class="table-wrap">
         <div class="felt-outer">
-          <div class="felt-ellipse">
-            <div class="felt-center">
-              <div id="street-center-lbl" style="font-size:8px;color:rgba(255,255,255,0.5)">Preflop</div>
+          <div class="felt-ell">
+            <div class="felt-ctr">
+              <div id="street-lbl" style="font-size:8px;color:rgba(255,255,255,0.45)">Preflop</div>
               <div id="community" style="display:flex;gap:4px;align-items:center;min-height:42px"></div>
-              <div style="font-size:9px;color:var(--gold);margin-top:3px">Pot: <span id="pot-display">—</span></div>
+              <div style="font-size:9px;color:var(--gold);margin-top:3px">Pot: <span id="pot-lbl">—</span></div>
             </div>
           </div>
-          <div class="seats-layer" id="seats-layer"></div>
+          <div id="seats-layer"></div>
         </div>
       </div>
 
-      <!-- Street Banner -->
-      <div class="street-banner">
-        <span class="street-label" id="street-label">Preflop</span>
-        <span class="street-actions-done" id="street-actions-done"></span>
-        <span class="street-pot" id="street-pot-label"></span>
+      <!-- SITUATION PANEL: always shown, complete info -->
+      <div class="sit-panel">
+        <div class="sit-header">
+          <span class="sit-pot" id="sit-pot">Pot: —</span>
+          <span class="sit-street" id="sit-street">Preflop</span>
+          <span class="sit-hero-hand" id="sit-hand">—</span>
+        </div>
+        <div class="sit-body">
+          <div class="sit-desc" id="sit-desc">Hand wird generiert…</div>
+          <div class="sit-log-title" id="sit-log-title">Aktionen diese Strasse:</div>
+          <div id="sit-log"></div>
+          <button class="proceed-btn" id="proceed-btn" onclick="startSpeech()">
+            🎤 Einschätzung aufnehmen →
+          </button>
+        </div>
       </div>
 
-      <!-- Speech Prompt (shown before each decision) -->
-      <div class="speech-prompt" id="speech-prompt" style="display:none">
+      <!-- SPEECH PANEL: shown after proceed -->
+      <div class="speech-panel" id="speech-panel">
         <div class="sp-head">
-          <div class="sp-head-title">🎤 Bevor du handelst — was denkst du?</div>
-          <div class="sp-head-sub" id="sp-situation-label"></div>
+          <span class="sp-title">🎤 Deine Einschätzung</span>
+          <span class="sp-skip" onclick="skipSpeech()">Überspringen →</span>
         </div>
         <div class="sp-body">
-          <div class="sp-context" id="sp-context"></div>
-          <div class="sp-questions" id="sp-questions"></div>
+          <div class="sp-qs" id="sp-qs"></div>
           <button class="voice-btn" id="voice-btn" onclick="toggleRec()">
-            <div class="rec-dot" id="rec-dot-inner"></div>
-            <span id="voice-btn-txt">Aufnehmen</span>
-            <span style="margin-left:auto;font-size:10px;color:var(--text3)" id="rec-timer-display"></span>
+            <div class="rec-dot" id="rec-dot"></div>
+            <span id="vbtn-txt">Aufnehmen</span>
+            <span id="rec-time" style="margin-left:auto;font-size:10px;color:var(--t3)"></span>
           </button>
-          <div class="sp-transcript" id="sp-transcript"></div>
-          <div class="skip-link" onclick="skipSpeech()">Überspringen und direkt handeln</div>
+          <div class="sp-tx" id="sp-tx"></div>
+          <button class="to-action-btn" id="to-action-btn" onclick="showActionPanel()">
+            Zur Aktion →
+          </button>
         </div>
       </div>
 
-      <!-- Action Panel (shown after speech or skip) -->
-      <div class="action-panel" id="action-panel" style="display:none">
+      <!-- ACTION PANEL: shown after speech or skip -->
+      <div class="action-panel" id="action-panel">
         <div class="ap-head">
           <span class="ap-title" id="ap-title">Dein Zug</span>
           <span class="ap-pill" id="ap-pill">Preflop</span>
         </div>
-        <div class="log-wrap">
-          <div class="log-lbl">Bisherige Aktionen diese Strasse</div>
-          <div id="action-log"></div>
-        </div>
         <div class="cl-wrap">
-          <div class="cl-label">Denkprozess-Checkliste</div>
+          <div class="cl-lbl">Denkprozess-Checkliste</div>
           <div id="checklist"></div>
         </div>
         <div class="bet-wrap">
-          <div class="bet-label" id="bet-label">Bet / Raise</div>
+          <div class="bet-lbl" id="bet-lbl">Bet / Raise Grösse</div>
           <div class="bet-row">
             <input type="range" id="bet-slider" min="0" max="100000" step="100" oninput="updateBet()">
             <span class="bet-val" id="bet-val">—</span>
           </div>
-          <div class="bet-presets" id="bet-presets"></div>
+          <div class="presets" id="presets"></div>
         </div>
         <div class="act-btns" id="act-btns"></div>
-        <div class="sit-info" id="sit-info"></div>
+        <div class="sit-foot" id="sit-foot"></div>
       </div>
-    </div>
 
-    <!-- HISTORY -->
+    </div><!-- /screen-game -->
+
+    <!-- ══ HISTORY ══ -->
     <div class="screen" id="screen-history">
-      <div id="history-list" class="safe-pad">
-        <div style="padding:40px 16px;text-align:center;font-size:13px;color:var(--text3)">Noch keine Hände gespielt.</div>
+      <div id="history-list">
+        <div style="padding:40px 16px;text-align:center;font-size:13px;color:var(--t3)">Noch keine Hände gespielt.</div>
       </div>
     </div>
 
-    <!-- STATS -->
+    <!-- ══ STATS ══ -->
     <div class="screen" id="screen-stats">
       <div class="stats-grid" id="stats-grid"></div>
       <div class="sec-title">Skill-Entwicklung</div>
       <div id="skill-bars" style="padding-bottom:12px;margin-top:4px"></div>
     </div>
 
-    <!-- SETTINGS -->
+    <!-- ══ SETTINGS ══ -->
     <div class="screen" id="screen-settings">
       <div class="settings-item">
-        <div class="settings-label">Anthropic API-Key</div>
-        <div class="settings-sub">Wird lokal auf deinem Gerät gespeichert. Holen auf console.anthropic.com</div>
-        <input class="settings-input" type="password" id="api-key-input" placeholder="sk-ant-api03-...">
+        <div class="settings-lbl">Anthropic API-Key</div>
+        <div class="settings-sub">Holen auf console.anthropic.com → API Keys. Lokal gespeichert, nie übertragen.</div>
+        <input class="settings-input" type="password" id="api-key-input" placeholder="sk-ant-api03-…">
         <div style="display:flex;align-items:center;gap:10px">
           <button class="settings-btn" onclick="saveApiKey()">Speichern</button>
-          <span id="api-key-status" class="settings-status"></span>
+          <span id="api-status" style="font-size:11px"></span>
         </div>
       </div>
       <div class="settings-item">
-        <div class="settings-label">Daten zurücksetzen</div>
-        <div class="settings-sub">Löscht alle gespeicherten Hände, Scores und den API-Key.</div>
-        <button onclick="resetData()" style="padding:10px 20px;border-radius:var(--r-sm);border:0.5px solid var(--red-b2);background:var(--red-bg);color:var(--red-text);font-size:13px;font-weight:700;cursor:pointer;align-self:flex-start">Reset</button>
+        <div class="settings-lbl">Neue Hand</div>
+        <button onclick="newHand();go('game')" style="padding:10px 20px;border-radius:var(--rs);border:0.5px solid var(--greenbo);background:var(--greenbg);color:var(--green);font-size:13px;font-weight:700;cursor:pointer;align-self:flex-start">Neue Hand starten ▶</button>
+      </div>
+      <div class="settings-item">
+        <div class="settings-lbl">Daten zurücksetzen</div>
+        <button onclick="resetData()" style="padding:10px 20px;border-radius:var(--rs);border:0.5px solid var(--redbo);background:var(--redbg);color:var(--red);font-size:13px;font-weight:700;cursor:pointer;align-self:flex-start">Reset</button>
       </div>
     </div>
 
-  </div><!-- /content -->
+  </div>
 
   <div id="bottomnav">
-    <button class="bn-btn active" onclick="go('game')" id="nav-game">
-      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-      Spiel
+    <button class="bn active" onclick="go('game')" id="nav-game">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Spiel
     </button>
-    <button class="bn-btn" onclick="go('history')" id="nav-history">
-      <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
-      Verlauf
+    <button class="bn" onclick="go('history')" id="nav-history">
+      <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>Verlauf
     </button>
-    <button class="bn-btn" onclick="go('stats')" id="nav-stats">
-      <svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-      Stats
+    <button class="bn" onclick="go('stats')" id="nav-stats">
+      <svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>Stats
     </button>
   </div>
 </div>
 
-<!-- REVIEW MODAL -->
-<div id="review-overlay">
+<!-- REVIEW OVERLAY -->
+<div id="rv-overlay">
   <div class="rv-card">
     <div class="rv-head">
       <div class="rv-title" id="rv-title">Hand-Auswertung</div>
       <div class="rv-sub" id="rv-sub"></div>
-      <div class="rv-scores-row" id="rv-scores-row"></div>
+      <div class="rv-pills" id="rv-pills"></div>
     </div>
     <div class="rv-body" id="rv-body">
-      <div class="loading-state"><div class="spinner"></div><div>Claude analysiert die gesamte Hand…</div></div>
+      <div class="loading"><div class="spinner"></div><br>Claude analysiert…</div>
     </div>
   </div>
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════════
-// DATA
-// ═══════════════════════════════════════════════════════════
-const SEAT_XY=[
+// ════════════════════════════════════════════════════════
+// CONSTANTS
+// ════════════════════════════════════════════════════════
+const MODEL = 'claude-sonnet-4-5'; // correct model string
+
+const SEAT_XY = [
   {x:72,y:9},{x:93,y:34},{x:91,y:63},{x:70,y:85},
   {x:50,y:93},{x:30,y:85},{x:9,y:63},{x:9,y:34},{x:28,y:9}
 ];
-const POS_ORDER=['BTN','SB','BB','UTG','UTG+1','MP1','MP2','HJ','CO'];
-const ACTING_ORDER=['UTG','UTG+1','MP1','MP2','HJ','CO','BTN','SB','BB'];
-const HERO_POS_OPTIONS=['UTG','UTG+1','MP1','MP2','HJ','CO','BTN'];
+const POS_ORDER = ['BTN','SB','BB','UTG','UTG+1','MP1','MP2','HJ','CO'];
+const ACTING    = ['UTG','UTG+1','MP1','MP2','HJ','CO','BTN','SB','BB'];
+const HERO_POS  = ['UTG','UTG+1','MP1','MP2','HJ','CO','BTN'];
 
-// Type abbreviations shown on table
-const TYPE_ABBR={
+const TYPE_ABBR = {
   'Maniac / LAG':'LAG','Nit / TAG':'NIT','Aggro Reg':'REG',
   'Calling Station':'CS','Passive Fish':'FI','Super Nit':'NIT',
   'LAG / Semi-Reg':'LAG','Tight Reg':'TAG','Recreational':'REC'
 };
 
-const PLAYER_POOL=[
-  {name:'Klaus',  short:'KL',vpip:68,pfr:52,af:4.1,type:'Maniac / LAG',    skill:'Beginner',
-   color:'#534AB7',tc:'#CECBF6',
-   notes:'Öffnet sehr weit, 3-bets oft auch mit schwachen Händen. Blufft zu viel.',
-   raisePct:{UTG:0.42,MP:0.55,HJ:0.65,CO:0.72,BTN:0.80,SB:0.60},
-   threebet:0.20,fourbet:0.08,coldcall:0.28,
-   postflop:{cbet:0.80,checkraise:0.18,foldToBet:0.30,bluffFreq:0.45}},
-  {name:'Rolf',   short:'RO',vpip:13,pfr:10,af:2.0,type:'Nit / TAG',       skill:'Mittel',
-   color:'#712B13',tc:'#F5C4B3',
-   notes:'Top-10% Hände only. Raise aus Early = Premiums. Legt schnell auf.',
-   raisePct:{UTG:0.08,MP:0.11,HJ:0.14,CO:0.17,BTN:0.25,SB:0.12},
-   threebet:0.05,fourbet:0.03,coldcall:0.06,
-   postflop:{cbet:0.55,checkraise:0.06,foldToBet:0.62,bluffFreq:0.05}},
-  {name:'Carla',  short:'CA',vpip:27,pfr:21,af:3.3,type:'Aggro Reg',       skill:'Fortgeschritten',
-   color:'#3B6D11',tc:'#C0DD97',
-   notes:'Gut balanciert. 3-bets aus LP mit breiter Range. Starker Postflop.',
-   raisePct:{UTG:0.14,MP:0.19,HJ:0.25,CO:0.30,BTN:0.42,SB:0.28},
-   threebet:0.12,fourbet:0.05,coldcall:0.10,
-   postflop:{cbet:0.68,checkraise:0.14,foldToBet:0.40,bluffFreq:0.22}},
-  {name:'Barbara',short:'BA',vpip:55,pfr:11,af:0.7,type:'Calling Station', skill:'Beginner',
-   color:'#0C447C',tc:'#B5D4F4',
-   notes:'Callt sehr viel, blufft kaum. Nur Value gegen sie.',
-   raisePct:{UTG:0.20,MP:0.28,HJ:0.36,CO:0.44,BTN:0.58,SB:0.38},
-   threebet:0.04,fourbet:0.01,coldcall:0.44,
-   postflop:{cbet:0.30,checkraise:0.05,foldToBet:0.25,bluffFreq:0.05}},
-  {name:'Peter',  short:'PE',vpip:42,pfr:5, af:0.5,type:'Passive Fish',    skill:'Beginner',
-   color:'#5F5E5A',tc:'#D3D1C7',
-   notes:'Limpt viel, wenig Aggression. Isolieren lohnt sich.',
-   raisePct:{UTG:0.10,MP:0.16,HJ:0.22,CO:0.30,BTN:0.42,SB:0.32},
-   threebet:0.02,fourbet:0.01,coldcall:0.36,
-   postflop:{cbet:0.25,checkraise:0.04,foldToBet:0.35,bluffFreq:0.04}},
-  {name:'Hans',   short:'HA',vpip:9, pfr:7, af:1.5,type:'Super Nit',       skill:'Mittel',
-   color:'#993556',tc:'#F4C0D1',
-   notes:'Extrem eng. 3-Bet = Monsters. BB-Steal einfach.',
-   raisePct:{UTG:0.05,MP:0.07,HJ:0.09,CO:0.12,BTN:0.18,SB:0.08},
-   threebet:0.03,fourbet:0.02,coldcall:0.04,
-   postflop:{cbet:0.50,checkraise:0.08,foldToBet:0.65,bluffFreq:0.04}},
-  {name:'Maria',  short:'MA',vpip:35,pfr:24,af:2.9,type:'LAG / Semi-Reg',  skill:'Mittel',
-   color:'#854F0B',tc:'#FAC775',
-   notes:'Aggressiv aus LP, 3-bets oft. Guter Postflop-Player.',
-   raisePct:{UTG:0.16,MP:0.22,HJ:0.28,CO:0.36,BTN:0.50,SB:0.32},
-   threebet:0.11,fourbet:0.04,coldcall:0.18,
-   postflop:{cbet:0.65,checkraise:0.12,foldToBet:0.42,bluffFreq:0.28}},
-  {name:'Franz',  short:'FR',vpip:22,pfr:18,af:2.5,type:'Tight Reg',       skill:'Mittel',
-   color:'#185FA5',tc:'#B5D4F4',
-   notes:'Solider Spieler. Selten aus der Linie. Respektiert Raises.',
-   raisePct:{UTG:0.10,MP:0.15,HJ:0.20,CO:0.26,BTN:0.38,SB:0.22},
-   threebet:0.08,fourbet:0.04,coldcall:0.12,
-   postflop:{cbet:0.60,checkraise:0.10,foldToBet:0.48,bluffFreq:0.15}},
-  {name:'Sonja',  short:'SO',vpip:48,pfr:14,af:1.2,type:'Recreational',    skill:'Beginner',
-   color:'#993556',tc:'#F4C0D1',
-   notes:'Spielt für Spass. Breite Calls, kaum Aggression postflop.',
-   raisePct:{UTG:0.16,MP:0.24,HJ:0.32,CO:0.40,BTN:0.56,SB:0.36},
-   threebet:0.05,fourbet:0.02,coldcall:0.40,
-   postflop:{cbet:0.28,checkraise:0.05,foldToBet:0.28,bluffFreq:0.06}},
+const POOL = [
+  {name:'Klaus', s:'KL',vpip:68,pfr:52,af:4.1,type:'Maniac / LAG',    sk:'Beginner',
+   col:'#534AB7',tc:'#CECBF6',notes:'Öffnet weit, 3-bets oft mit schwachen Händen.',
+   rp:{UTG:0.42,MP:0.55,HJ:0.65,CO:0.72,BTN:0.80,SB:0.60},tb:0.20,fb:0.08,cc:0.28,pfCbet:0.80,pfFold:0.30},
+  {name:'Rolf',  s:'RO',vpip:13,pfr:10,af:2.0,type:'Nit / TAG',       sk:'Mittel',
+   col:'#712B13',tc:'#F5C4B3',notes:'Top-10% only. Raise = Premiums.',
+   rp:{UTG:0.08,MP:0.11,HJ:0.14,CO:0.17,BTN:0.25,SB:0.12},tb:0.05,fb:0.03,cc:0.06,pfCbet:0.55,pfFold:0.62},
+  {name:'Carla', s:'CA',vpip:27,pfr:21,af:3.3,type:'Aggro Reg',       sk:'Fortgeschritten',
+   col:'#3B6D11',tc:'#C0DD97',notes:'Gut balanciert. Breite 3-Bet Range aus LP.',
+   rp:{UTG:0.14,MP:0.19,HJ:0.25,CO:0.30,BTN:0.42,SB:0.28},tb:0.12,fb:0.05,cc:0.10,pfCbet:0.68,pfFold:0.40},
+  {name:'Barbara',s:'BA',vpip:55,pfr:11,af:0.7,type:'Calling Station',sk:'Beginner',
+   col:'#0C447C',tc:'#B5D4F4',notes:'Callt sehr viel, blufft kaum.',
+   rp:{UTG:0.20,MP:0.28,HJ:0.36,CO:0.44,BTN:0.58,SB:0.38},tb:0.04,fb:0.01,cc:0.44,pfCbet:0.30,pfFold:0.25},
+  {name:'Peter', s:'PE',vpip:42,pfr:5, af:0.5,type:'Passive Fish',    sk:'Beginner',
+   col:'#5F5E5A',tc:'#D3D1C7',notes:'Limpt viel, wenig Aggression.',
+   rp:{UTG:0.10,MP:0.16,HJ:0.22,CO:0.30,BTN:0.42,SB:0.32},tb:0.02,fb:0.01,cc:0.36,pfCbet:0.25,pfFold:0.35},
+  {name:'Hans',  s:'HA',vpip:9, pfr:7, af:1.5,type:'Super Nit',       sk:'Mittel',
+   col:'#993556',tc:'#F4C0D1',notes:'Extrem eng. 3-Bet = Monsters.',
+   rp:{UTG:0.05,MP:0.07,HJ:0.09,CO:0.12,BTN:0.18,SB:0.08},tb:0.03,fb:0.02,cc:0.04,pfCbet:0.50,pfFold:0.65},
+  {name:'Maria', s:'MA',vpip:35,pfr:24,af:2.9,type:'LAG / Semi-Reg',  sk:'Mittel',
+   col:'#854F0B',tc:'#FAC775',notes:'Aggressiv aus LP, häufige 3-Bets.',
+   rp:{UTG:0.16,MP:0.22,HJ:0.28,CO:0.36,BTN:0.50,SB:0.32},tb:0.11,fb:0.04,cc:0.18,pfCbet:0.65,pfFold:0.42},
+  {name:'Franz', s:'FR',vpip:22,pfr:18,af:2.5,type:'Tight Reg',       sk:'Mittel',
+   col:'#185FA5',tc:'#B5D4F4',notes:'Solider Reg. Respektiert Raises.',
+   rp:{UTG:0.10,MP:0.15,HJ:0.20,CO:0.26,BTN:0.38,SB:0.22},tb:0.08,fb:0.04,cc:0.12,pfCbet:0.60,pfFold:0.48},
+  {name:'Sonja', s:'SO',vpip:48,pfr:14,af:1.2,type:'Recreational',    sk:'Beginner',
+   col:'#993556',tc:'#F4C0D1',notes:'Breite Calls, kaum Aggression.',
+   rp:{UTG:0.16,MP:0.24,HJ:0.32,CO:0.40,BTN:0.56,SB:0.36},tb:0.05,fb:0.02,cc:0.40,pfCbet:0.28,pfFold:0.28},
 ];
 
-const HERO_HANDS=[
-  {r1:'A',s1:'♥',c1:'red',r2:'K',s2:'♠',c2:'black',desc:'AKo'},
-  {r1:'A',s1:'♥',c1:'red',r2:'A',s2:'♠',c2:'black',desc:'AA'},
-  {r1:'K',s1:'♦',c1:'red',r2:'K',s2:'♣',c2:'black',desc:'KK'},
-  {r1:'Q',s1:'♥',c1:'red',r2:'Q',s2:'♠',c2:'black',desc:'QQ'},
-  {r1:'J',s1:'♠',c1:'black',r2:'J',s2:'♦',c2:'red',desc:'JJ'},
-  {r1:'T',s1:'♠',c1:'black',r2:'T',s2:'♦',c2:'red',desc:'TT'},
-  {r1:'9',s1:'♠',c1:'black',r2:'9',s2:'♦',c2:'red',desc:'99'},
-  {r1:'A',s1:'♠',c1:'black',r2:'Q',s2:'♥',c2:'red',desc:'AQo'},
-  {r1:'A',s1:'♦',c1:'red',r2:'J',s2:'♦',c2:'red',desc:'AJss'},
-  {r1:'K',s1:'♥',c1:'red',r2:'Q',s2:'♥',c2:'red',desc:'KQss'},
+const HANDS = [
+  {r1:'A',s1:'♥',c1:'red', r2:'K',s2:'♠',c2:'black',desc:'AKo'},
+  {r1:'A',s1:'♥',c1:'red', r2:'A',s2:'♠',c2:'black',desc:'AA'},
+  {r1:'K',s1:'♦',c1:'red', r2:'K',s2:'♣',c2:'black',desc:'KK'},
+  {r1:'Q',s1:'♥',c1:'red', r2:'Q',s2:'♠',c2:'black',desc:'QQ'},
+  {r1:'J',s1:'♠',c1:'black',r2:'J',s2:'♦',c2:'red', desc:'JJ'},
+  {r1:'T',s1:'♠',c1:'black',r2:'T',s2:'♦',c2:'red', desc:'TT'},
+  {r1:'9',s1:'♠',c1:'black',r2:'9',s2:'♦',c2:'red', desc:'99'},
+  {r1:'A',s1:'♠',c1:'black',r2:'Q',s2:'♥',c2:'red', desc:'AQo'},
+  {r1:'A',s1:'♦',c1:'red', r2:'J',s2:'♦',c2:'red',  desc:'AJss'},
+  {r1:'K',s1:'♥',c1:'red', r2:'Q',s2:'♥',c2:'red',  desc:'KQss'},
   {r1:'A',s1:'♣',c1:'black',r2:'5',s2:'♣',c2:'black',desc:'A5ss'},
   {r1:'7',s1:'♠',c1:'black',r2:'6',s2:'♠',c2:'black',desc:'76ss'},
-  {r1:'8',s1:'♥',c1:'red',r2:'7',s2:'♥',c2:'red',desc:'87ss'},
-  {r1:'K',s1:'♠',c1:'black',r2:'J',s2:'♦',c2:'red',desc:'KJo'},
-  {r1:'Q',s1:'♥',c1:'red',r2:'T',s2:'♣',c2:'black',desc:'QTo'},
-  {r1:'6',s1:'♥',c1:'red',r2:'5',s2:'♥',c2:'red',desc:'65ss'},
-  {r1:'3',s1:'♠',c1:'black',r2:'3',s2:'♦',c2:'red',desc:'33'},
-  {r1:'A',s1:'♦',c1:'red',r2:'9',s2:'♦',c2:'red',desc:'A9ss'},
+  {r1:'8',s1:'♥',c1:'red', r2:'7',s2:'♥',c2:'red',  desc:'87ss'},
+  {r1:'K',s1:'♠',c1:'black',r2:'J',s2:'♦',c2:'red', desc:'KJo'},
+  {r1:'Q',s1:'♥',c1:'red', r2:'T',s2:'♣',c2:'black',desc:'QTo'},
+  {r1:'6',s1:'♥',c1:'red', r2:'5',s2:'♥',c2:'red',  desc:'65ss'},
+  {r1:'8',s1:'♠',c1:'black',r2:'8',s2:'♦',c2:'red', desc:'88'},
+  {r1:'A',s1:'♦',c1:'red', r2:'9',s2:'♦',c2:'red',  desc:'A9ss'},
   {r1:'K',s1:'♣',c1:'black',r2:'T',s2:'♣',c2:'black',desc:'KTss'},
-  {r1:'8',s1:'♠',c1:'black',r2:'8',s2:'♦',c2:'red',desc:'88'},
+  {r1:'3',s1:'♠',c1:'black',r2:'3',s2:'♦',c2:'red', desc:'33'},
 ];
 
-const BLINDS=[
-  {sb:100,bb:200,ante:25,label:'100/200 (25)'},
-  {sb:200,bb:400,ante:50,label:'200/400 (50)'},
-  {sb:300,bb:600,ante:75,label:'300/600 (75)'},
-  {sb:400,bb:800,ante:100,label:'400/800 (100)'},
-  {sb:500,bb:1000,ante:125,label:'500/1000 (125)'},
+const BLINDS_LIST = [
+  {sb:100, bb:200,  ante:25,  lbl:'100/200 · Ante 25'},
+  {sb:200, bb:400,  ante:50,  lbl:'200/400 · Ante 50'},
+  {sb:300, bb:600,  ante:75,  lbl:'300/600 · Ante 75'},
+  {sb:400, bb:800,  ante:100, lbl:'400/800 · Ante 100'},
+  {sb:500, bb:1000, ante:125, lbl:'500/1000 · Ante 125'},
 ];
 
-// Community cards pools
-const FLOP_POOL=[
-  [{r:'A',s:'♦',red:true},{r:'7',s:'♣',red:false},{r:'2',s:'♥',red:true}],
-  [{r:'K',s:'♠',red:false},{r:'Q',s:'♥',red:true},{r:'J',s:'♦',red:true}],
-  [{r:'T',s:'♣',red:false},{r:'8',s:'♥',red:true},{r:'3',s:'♠',red:false}],
-  [{r:'A',s:'♠',red:false},{r:'A',s:'♥',red:true},{r:'5',s:'♣',red:false}],
-  [{r:'J',s:'♠',red:false},{r:'T',s:'♦',red:true},{r:'9',s:'♣',red:false}],
-  [{r:'7',s:'♥',red:true},{r:'5',s:'♠',red:false},{r:'2',s:'♦',red:true}],
-  [{r:'K',s:'♥',red:true},{r:'6',s:'♣',red:false},{r:'2',s:'♠',red:false}],
-  [{r:'Q',s:'♠',red:false},{r:'J',s:'♥',red:true},{r:'4',s:'♣',red:false}],
+const FLOPS = [
+  [{r:'A',s:'♦',red:true}, {r:'7',s:'♣',red:false},{r:'2',s:'♥',red:true}],
+  [{r:'K',s:'♠',red:false},{r:'Q',s:'♥',red:true}, {r:'J',s:'♦',red:true}],
+  [{r:'T',s:'♣',red:false},{r:'8',s:'♥',red:true}, {r:'3',s:'♠',red:false}],
+  [{r:'J',s:'♠',red:false},{r:'T',s:'♦',red:true}, {r:'9',s:'♣',red:false}],
+  [{r:'7',s:'♥',red:true}, {r:'5',s:'♠',red:false},{r:'2',s:'♦',red:true}],
+  [{r:'K',s:'♥',red:true}, {r:'6',s:'♣',red:false},{r:'2',s:'♠',red:false}],
+  [{r:'Q',s:'♠',red:false},{r:'J',s:'♥',red:true}, {r:'4',s:'♣',red:false}],
+  [{r:'A',s:'♠',red:false},{r:'5',s:'♣',red:false},{r:'3',s:'♦',red:true}],
 ];
-const TURN_POOL=[{r:'J',s:'♠',red:false},{r:'9',s:'♦',red:true},{r:'3',s:'♣',red:false},{r:'K',s:'♥',red:true},{r:'2',s:'♠',red:false},{r:'7',s:'♥',red:true},{r:'A',s:'♣',red:false},{r:'6',s:'♦',red:true}];
-const RIVER_POOL=[{r:'5',s:'♥',red:true},{r:'8',s:'♠',red:false},{r:'Q',s:'♣',red:false},{r:'T',s:'♦',red:true},{r:'4',s:'♣',red:false},{r:'2',s:'♥',red:true},{r:'9',s:'♠',red:false},{r:'K',s:'♦',red:true}];
+const TURNS  = [{r:'J',s:'♠',red:false},{r:'9',s:'♦',red:true},{r:'3',s:'♣',red:false},{r:'K',s:'♥',red:true},{r:'2',s:'♠',red:false},{r:'7',s:'♥',red:true}];
+const RIVERS = [{r:'5',s:'♥',red:true},{r:'8',s:'♠',red:false},{r:'Q',s:'♣',red:false},{r:'T',s:'♦',red:true},{r:'4',s:'♣',red:false},{r:'9',s:'♠',red:false}];
 
-const CL_ITEMS_PREFLOP=[
-  'Position & aktive Spieler hinter mir bewertet',
-  'Hand-Stärke & Playability eingeschätzt',
-  'Raiser/3-Bet-Range analysiert',
-  'Spielertypen berücksichtigt',
-  'Sizing & Stack-Tiefe beachtet',
-];
-const CL_ITEMS_POSTFLOP=[
-  'Board Texture analysiert (wet/dry, draws)',
-  'Meine Range vs Gegner-Range bewertet',
-  'Spielertypen & ihre Postflop-Tendenz',
-  'Bet-Sizing (Value/Bluff/Protection)',
-  'Pot Odds & Implied Odds berechnet',
+const CL_PRE  = ['Position & Spieler hinter mir','Hand-Stärke & Playability','Raiser/3-Bet Range analysiert','Spielertypen berücksichtigt','Sizing & Stack-Tiefe'];
+const CL_POST = ['Board Texture (wet/dry, draws)','Meine Range vs Gegner-Range','Spielertypen & Postflop-Tendenz','Bet Sizing (Value/Bluff/Protection)','Pot Odds & Implied Odds'];
+const SQ_PRE  = ['Was ist die Range des Raisers/3-Betters?','Wie spielen die Spieler hinter mir?','Was ist das optimale Sizing?'];
+const SQ_POST = ['Wie trifft der Board meine Range vs die des Gegners?','Welche Draws existieren auf diesem Board?','Value bet, Bluff oder Check? Warum?'];
+
+const SKILLS = [
+  {name:'Range Reading', key:'range', col:'#1D9E75'},
+  {name:'Board Texture', key:'board', col:'#534AB7'},
+  {name:'Spielertypen',  key:'player',col:'#D85A30'},
+  {name:'Denkprozess',   key:'process',col:'#378ADD'},
+  {name:'Pot Odds / EV', key:'odds',  col:'#BA7517'},
 ];
 
-const SP_QUESTIONS_PREFLOP=[
-  'Was ist die Range des Raisers / 3-Betters?',
-  'Wie spielen die Spieler hinter dir?',
-  'Was ist die optimale Sizing?',
-];
-const SP_QUESTIONS_POSTFLOP=[
-  'Wie trifft der Board meine Range vs seine Range?',
-  'Welche Draws sind möglich?',
-  'Value bet, Bluff oder Check?',
-];
-
-const SKILLS=[
-  {name:'Range Reading',key:'range',color:'#1D9E75'},
-  {name:'Board Texture',key:'board',color:'#534AB7'},
-  {name:'Spielertypen',key:'player',color:'#D85A30'},
-  {name:'Denkprozess',key:'process',color:'#378ADD'},
-  {name:'Pot Odds / EV',key:'odds',color:'#BA7517'},
-];
-
-// ═══════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // STATE
-// ═══════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 let G = {
-  // scenario
-  sc: null,
-  street: 'preflop', // preflop | flop | turn | river
-  pot: 0,
-  board: [], // community cards dealt so far
-  activePlayers: [], // seats still in hand
-  streetLog: [], // actions this street
-  handLog: [], // all decisions recorded [{street, action, betAmt, transcript, checks, context}]
-  heroFolded: false,
-  raiserOnStreet: null,
-  callAmt: 0,
-  streetPhase: 'speech', // speech | action
-  // recording
-  recording: false, recSec: 0, recTimer: null,
-  recognition: null, transcript: '',
-  // checklist
-  checks: new Set(),
+  sc:null, street:'preflop', pot:0, board:[],
+  activePlayers:[], streetLog:[], handLog:[],
+  callAmt:0, betAmt:0, streetRaiser:null,
+  checks:new Set(),
+  recording:false, recSec:0, recTimer:null, recog:null, transcript:'',
 };
-
 let APP = {
-  hands: 0, scores: [], recs: 0,
-  skill: {range:0,board:0,player:0,process:0,odds:0},
-  skillN: {range:0,board:0,player:0,process:0,odds:0},
-  history: [],
-  apiKey: null,
+  hands:0, scores:[], recs:0,
+  skill:{range:0,board:0,player:0,process:0,odds:0},
+  skillN:{range:0,board:0,player:0,process:0,odds:0},
+  history:[], apiKey:null,
 };
 
-// ═══════════════════════════════════════════════════════════
-// PERSISTENCE
-// ═══════════════════════════════════════════════════════════
 function loadApp(){
-  try{
-    const s=localStorage.getItem('pokerCoachV2');
-    if(s){const d=JSON.parse(s);Object.assign(APP,d);}
-  }catch(e){}
+  try { const d=JSON.parse(localStorage.getItem('pcv4')||'{}'); Object.assign(APP,d); } catch(e){}
 }
 function saveApp(){
-  try{localStorage.setItem('pokerCoachV2',JSON.stringify(APP));}catch(e){}
+  try { localStorage.setItem('pcv4',JSON.stringify(APP)); } catch(e){}
 }
 
-// ═══════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // HELPERS
-// ═══════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 function pick(a){return a[Math.floor(Math.random()*a.length)];}
-function shuffle(a){let b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
-function posGrp(p){if(p==='UTG'||p==='UTG+1')return 'UTG';if(p==='MP1'||p==='MP2')return 'MP';return p;}
+function shuf(a){let b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function pgrp(p){if(p==='UTG'||p==='UTG+1')return 'UTG';if(p==='MP1'||p==='MP2')return 'MP';return p;}
 function fmt(n){return Number(n).toLocaleString('de-CH');}
-function posColor(pos){
-  if(pos==='BTN')return {bg:'#854F0B',tc:'#FAC775'};
-  if(pos==='SB'||pos==='BB')return {bg:'#185FA5',tc:'#B5D4F4'};
-  if(pos==='UTG'||pos==='UTG+1')return {bg:'#791F1F',tc:'#F7C1C1'};
+function pcol(pos){
+  if(pos==='BTN')      return {bg:'#854F0B',tc:'#FAC775'};
+  if(pos==='SB'||pos==='BB') return {bg:'#185FA5',tc:'#B5D4F4'};
+  if(pos==='UTG'||pos==='UTG+1') return {bg:'#791F1F',tc:'#F7C1C1'};
   return {bg:'#27500A',tc:'#C0DD97'};
 }
+function scoreColors(sc){
+  if(sc>=70) return {bg:'#E1F5EE',tc:'#085041'};
+  if(sc>=50) return {bg:'#FAEEDA',tc:'#633806'};
+  return {bg:'#FCEBEB',tc:'#791F1F'};
+}
+function entschColors(e){
+  const m={optimal:{bg:'#E1F5EE',tc:'#085041'},gut:{bg:'#EAF3DE',tc:'#27500A'},suboptimal:{bg:'#FAEEDA',tc:'#633806'},fehler:{bg:'#FCEBEB',tc:'#791F1F'}};
+  return m[e]||{bg:'#F1EFE8',tc:'#5F5E5A'};
+}
 
-// ═══════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // SCENARIO GENERATOR
-// ═══════════════════════════════════════════════════════════
-function generateScenario(){
-  const blinds=pick(BLINDS);
-  const bb=blinds.bb;
-  const heroHand=pick(HERO_HANDS);
-  const heroPos=pick(HERO_POS_OPTIONS);
-  const heroActIdx=ACTING_ORDER.indexOf(heroPos);
-  const shuffled=shuffle(PLAYER_POOL);
+// ════════════════════════════════════════════════════════
+function genScenario(){
+  const blinds = pick(BLINDS_LIST);
+  const bb = blinds.bb;
+  const heroHand = pick(HANDS);
+  const heroPos  = pick(HERO_POS);
+  const heroActIdx = ACTING.indexOf(heroPos);
+  const shuffled = shuf(POOL);
 
-  const seats=POS_ORDER.map((pos,i)=>({
-    ...shuffled[i],
-    pos,isHero:pos===heroPos,
-    stack:pos===heroPos?rnd(18,55)*bb:rnd(15,70)*bb,
-    bet:0,folded:false,dealer:pos==='BTN',
-    holeCards: pos===heroPos ? heroHand : generateOpponentHand(),
+  const seats = POS_ORDER.map((pos,i) => ({
+    ...shuffled[i], pos,
+    isHero: pos===heroPos,
+    stack: pos===heroPos ? rnd(18,55)*bb : rnd(15,70)*bb,
+    bet:0, folded:false, dealer:pos==='BTN',
   }));
 
-  // Give hero correct data
-  const heroSeat=seats.find(s=>s.isHero);
-  heroSeat.name='Du (Hero)'; heroSeat.short='DU';
-  heroSeat.color='#1D9E75'; heroSeat.tc='#E1F5EE';
+  const heroSeat = seats.find(s=>s.isHero);
+  heroSeat.name='Du (Hero)'; heroSeat.s='DU';
+  heroSeat.col='#1D9E75'; heroSeat.tc='#E1F5EE';
 
-  const sbSeat=seats.find(s=>s.pos==='SB');
-  const bbSeat=seats.find(s=>s.pos==='BB');
-  sbSeat.bet=blinds.sb; bbSeat.bet=blinds.bb;
+  const sbSeat = seats.find(s=>s.pos==='SB');
+  const bbSeat = seats.find(s=>s.pos==='BB');
+  sbSeat.bet = blinds.sb;
+  bbSeat.bet = blinds.bb;
 
-  let pot=blinds.sb+blinds.bb+(blinds.ante*9);
-  let raiser=null,threebet=null;
-  const log=[];
-  log.push({pos:'SB',name:sbSeat.name,act:'postet SB',amt:blinds.sb,cls:'c-call'});
-  log.push({pos:'BB',name:bbSeat.name,act:'postet BB',amt:blinds.bb,cls:'c-call'});
+  let pot = blinds.sb + blinds.bb + (blinds.ante * 9);
+  let raiser=null, threebet=null;
+  const log = [];
+  log.push({pos:'SB', name:sbSeat.name, act:'postet SB', amt:blinds.sb, cls:'c-call'});
+  log.push({pos:'BB', name:bbSeat.name, act:'postet BB', amt:blinds.bb, cls:'c-call'});
 
-  for(let i=0;i<heroActIdx;i++){
-    const pos=ACTING_ORDER[i];
-    const seat=seats.find(s=>s.pos===pos);
+  for(let i=0; i<heroActIdx; i++){
+    const pos = ACTING[i];
+    const seat = seats.find(s=>s.pos===pos);
     if(!seat||seat.isHero) continue;
-    const pg=posGrp(pos);
-    const r=Math.random();
+    const r = Math.random();
+    const g = pgrp(pos);
+
     if(!raiser){
-      const chance=seat.raisePct[pg]||seat.raisePct['MP']||0.15;
-      if(r<chance){
-        let mult=seat.skill==='Beginner'?rnd(25,38)/10:rnd(21,30)/10;
-        const amt=Math.max(bb*2,Math.round(bb*mult/100)*100);
-        seat.bet=amt;pot+=amt;
-        raiser={pos,seat,amt};
-        log.push({pos,name:seat.name,act:'open-raist auf',amt,cls:'c-raise'});
-      }else{seat.folded=true;log.push({pos,name:seat.name,act:'foldet',cls:'c-fold'});}
-    }else if(!threebet){
-      if(r<seat.threebet){
-        const amt=Math.max(raiser.amt*3,Math.round(raiser.amt*rnd(28,35)/10/100)*100);
-        seat.bet=amt;pot+=amt;
+      const chance = seat.rp[g]||seat.rp['MP']||0.15;
+      if(r < chance){
+        const mult = seat.sk==='Beginner' ? rnd(25,38)/10 : rnd(21,30)/10;
+        const amt = Math.max(bb*2, Math.round(bb*mult/100)*100);
+        seat.bet=amt; pot+=amt;
+        raiser = {pos,seat,amt};
+        log.push({pos, name:seat.name, act:'open-raist auf', amt, cls:'c-raise'});
+      } else {
+        seat.folded=true;
+        log.push({pos, name:seat.name, act:'foldet', cls:'c-fold'});
+      }
+    } else if(!threebet){
+      if(r < seat.tb){
+        const amt = Math.max(raiser.amt*3, Math.round(raiser.amt*rnd(28,35)/10/100)*100);
+        seat.bet=amt; pot+=amt;
         threebet={pos,seat,amt};
-        log.push({pos,name:seat.name,act:'3-bets auf',amt,cls:'c-raise'});
-      }else if(r<seat.threebet+seat.coldcall){
-        seat.bet=raiser.amt;pot+=raiser.amt;
-        log.push({pos,name:seat.name,act:'callt',amt:raiser.amt,cls:'c-call'});
-      }else{seat.folded=true;log.push({pos,name:seat.name,act:'foldet',cls:'c-fold'});}
-    }else{
-      if(r<seat.fourbet){
-        const amt=Math.round(threebet.amt*rnd(22,30)/10/100)*100;
-        seat.bet=amt;pot+=amt;
-        log.push({pos,name:seat.name,act:'4-bets auf',amt,cls:'c-raise'});
-      }else if(r<seat.fourbet+0.15){
-        seat.bet=threebet.amt;pot+=threebet.amt;
-        log.push({pos,name:seat.name,act:'callt',amt:threebet.amt,cls:'c-call'});
-      }else{seat.folded=true;log.push({pos,name:seat.name,act:'foldet',cls:'c-fold'});}
+        log.push({pos, name:seat.name, act:'3-bets auf', amt, cls:'c-raise'});
+      } else if(r < seat.tb+seat.cc){
+        seat.bet=raiser.amt; pot+=raiser.amt;
+        log.push({pos, name:seat.name, act:'callt', amt:raiser.amt, cls:'c-call'});
+      } else {
+        seat.folded=true;
+        log.push({pos, name:seat.name, act:'foldet', cls:'c-fold'});
+      }
+    } else {
+      if(r < seat.fb){
+        const amt = Math.round(threebet.amt*rnd(22,30)/10/100)*100;
+        seat.bet=amt; pot+=amt;
+        log.push({pos, name:seat.name, act:'4-bets auf', amt, cls:'c-raise'});
+      } else if(r < seat.fb+0.15){
+        seat.bet=threebet.amt; pot+=threebet.amt;
+        log.push({pos, name:seat.name, act:'callt', amt:threebet.amt, cls:'c-call'});
+      } else {
+        seat.folded=true;
+        log.push({pos, name:seat.name, act:'foldet', cls:'c-fold'});
+      }
     }
   }
 
-  let situation,callAmt=0,minRaise=0;
-  if(!raiser){situation='open';minRaise=bb*2;}
-  else if(!threebet){situation='facing_open';callAmt=raiser.amt;minRaise=raiser.amt*2;}
-  else{situation='facing_3bet';callAmt=threebet.amt;minRaise=threebet.amt*3;}
+  let situation,callAmt=0;
+  if(!raiser)         { situation='open'; }
+  else if(!threebet)  { situation='facing_open';  callAmt=raiser.amt; }
+  else                { situation='facing_3bet';  callAmt=threebet.amt; }
 
-  // After-hero seats
-  const afterHero=ACTING_ORDER.slice(heroActIdx+1)
+  const afterHero = ACTING.slice(heroActIdx+1)
     .map(p=>seats.find(s=>s.pos===p))
     .filter(s=>s&&!s.folded&&!s.isHero);
 
-  // Board
-  const flop=pick(FLOP_POOL);
-  const turn=pick(TURN_POOL);
-  const river=pick(RIVER_POOL);
-
   return {
-    seats,heroSeat,heroHand,heroPos,blinds,pot,
-    preflopLog:log,situation,callAmt,minRaise,
-    raiser,threebet,afterHero,
-    flop,turn,river,
-    initialPot:pot,
+    seats, heroSeat, heroHand, heroPos, blinds, pot,
+    preflopLog:log, situation, callAmt,
+    raiser, threebet, afterHero,
+    flop:pick(FLOPS), turn:pick(TURNS), river:pick(RIVERS),
   };
 }
 
-function generateOpponentHand(){
-  const ranks=['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
-  const suits=['♠','♥','♦','♣'];
-  const r1=pick(ranks),s1=pick(suits);
-  let r2,s2;
-  do{r2=pick(ranks);s2=pick(suits);}while(r1===r2&&s1===s2);
-  return {r1,s1,c1:s1==='♥'||s1==='♦'?'red':'black',r2,s2,c2:s2==='♥'||s2==='♦'?'red':'black',desc:`${r1}${s1}${r2}${s2}`};
-}
-
-// ═══════════════════════════════════════════════════════════
-// RENDER TABLE
-// ═══════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
+// RENDER TABLE (seats + bets)
+// ════════════════════════════════════════════════════════
 function renderTable(){
-  const sc=G.sc;
-  // Seats
-  const layer=document.getElementById('seats-layer');
-  layer.innerHTML='';
-  sc.seats.forEach((p,i)=>{
-    if(p.folded&&!p.isHero) return; // skip folded except hero
-    const xy=SEAT_XY[i];
-    const pc=posColor(p.pos);
-    const abbr=TYPE_ABBR[p.type]||p.type.substring(0,3).toUpperCase();
-    const d=document.createElement('div');
-    d.className='seat'+(p.isHero?' is-hero':'')+(p.folded?' is-folded':'')+(p.isHero?' is-to-act':'');
-    d.style.cssText=`position:absolute;left:${xy.x}%;top:${xy.y}%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:1px;pointer-events:auto`;
-    const ini=(p.short||p.name.substring(0,2)).toUpperCase();
-    let h=`<div class="ava" style="background:${p.color};color:${p.tc}">
+  const sc = G.sc;
+  const layer = document.getElementById('seats-layer');
+  layer.innerHTML = '';
+
+  sc.seats.forEach((p,i) => {
+    const xy = SEAT_XY[i];
+    const pCol = pcol(p.pos);
+    const abbr = TYPE_ABBR[p.type]||p.type.substring(0,3).toUpperCase();
+
+    // Get live data from activePlayers
+    const live = G.activePlayers.find(a=>a.pos===p.pos);
+    const currentStack = live ? live.stack : p.stack;
+    const currentBet   = live ? (live.currentBet||0) : p.bet;
+
+    const d = document.createElement('div');
+    d.className = 'seat'+(p.isHero?' is-hero':'')+(p.folded&&!p.isHero?' folded':'')+(p.isHero?' is-active':'');
+    d.style.cssText = `position:absolute;left:${xy.x}%;top:${xy.y}%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:0;pointer-events:auto`;
+
+    const ini = (p.s||p.name.substring(0,2)).toUpperCase();
+    let h = `<div class="ava" style="background:${p.col};color:${p.tc}">
       ${ini}
-      <span class="pos-badge" style="background:${pc.bg};color:${pc.tc}">${p.pos}</span>
+      <span class="pos-badge" style="background:${pCol.bg};color:${pCol.tc}">${p.pos}</span>
       ${!p.isHero?`<span class="type-badge">${abbr}</span>`:''}
       ${p.dealer?'<span class="d-chip">D</span>':''}
     </div>`;
-    h+=`<span class="seat-name">${p.isHero?'Hero':p.name}</span>`;
-    const activeSeat=G.activePlayers.find(s=>s.pos===p.pos);
-    const displayStack=activeSeat?activeSeat.stack:p.stack;
-    if(!p.folded) h+=`<span class="seat-stack">${fmt(displayStack)}</span>`;
+
+    h += `<span class="sname">${p.isHero?'Hero':p.name}</span>`;
+    if(!p.folded) h += `<span class="sstack">${fmt(currentStack)}</span>`;
+
+    // Show bet chip — critical for visibility
+    if(currentBet>0 && !p.isHero) h += `<span class="bet-chip">+${fmt(currentBet)}</span>`;
+    if(p.bet>0 && p.isHero===false && G.street==='preflop') {
+      // already shown via currentBet
+    }
+
+    if(p.folded && !p.isHero) h += `<span style="font-size:6px;color:rgba(255,255,255,0.3)">fold</span>`;
+
+    // Hero cards
     if(p.isHero){
-      const hc=sc.heroHand;
-      h+=`<div class="hole">
+      const hc = sc.heroHand;
+      h += `<div style="display:flex;gap:2px;margin-top:2px">
         <div class="hcard" style="color:${hc.c1==='red'?'#c0392b':'#111'}">${hc.r1}<span style="font-size:7px">${hc.s1}</span></div>
         <div class="hcard" style="color:${hc.c2==='red'?'#c0392b':'#111'}">${hc.r2}<span style="font-size:7px">${hc.s2}</span></div>
       </div>`;
-    }else if(G.street!=='preflop'){
-      // Show back of cards for active opponents
-      const isActive=G.activePlayers.find(s=>s.pos===p.pos);
-      if(isActive) h+=`<div class="hole"><div class="hcard-back"></div><div class="hcard-back"></div></div>`;
+    } else if(G.street!=='preflop' && !p.folded){
+      h += `<div style="display:flex;gap:2px;margin-top:2px">
+        <div class="hcard-back"></div><div class="hcard-back"></div>
+      </div>`;
     }
-    d.innerHTML=h; layer.appendChild(d);
-  });
 
-  // Folded players (ghost)
-  sc.seats.forEach((p,i)=>{
-    if(!p.folded||p.isHero) return;
-    const xy=SEAT_XY[i];
-    const pc=posColor(p.pos);
-    const abbr=TYPE_ABBR[p.type]||p.type.substring(0,3).toUpperCase();
-    const d=document.createElement('div');
-    d.className='seat is-folded';
-    d.style.cssText=`position:absolute;left:${xy.x}%;top:${xy.y}%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:1px`;
-    d.innerHTML=`<div class="ava" style="background:${p.color};color:${p.tc}">
-      ${(p.short||p.name.substring(0,2)).toUpperCase()}
-      <span class="pos-badge" style="background:${pc.bg};color:${pc.tc}">${p.pos}</span>
-      <span class="type-badge">${abbr}</span>
-    </div>
-    <span class="seat-name">${p.name}</span>
-    <span style="font-size:6px;color:rgba(255,255,255,0.35)">fold</span>`;
+    d.innerHTML = h;
     layer.appendChild(d);
   });
 
-  // Community cards
   renderCommunity();
-
-  // Pot & street
-  document.getElementById('pot-display').textContent=fmt(G.pot);
-  document.getElementById('street-center-lbl').textContent=G.street.charAt(0).toUpperCase()+G.street.slice(1);
+  document.getElementById('pot-lbl').textContent = fmt(G.pot);
+  document.getElementById('street-lbl').textContent = cap(G.street);
 }
 
 function renderCommunity(){
-  const el=document.getElementById('community');
-  let html='';
-  G.board.forEach(c=>{
-    html+=`<div class="ccard" style="color:${c.red?'#c0392b':'#111'}">${c.r}<span style="font-size:8px">${c.s}</span></div>`;
+  const el = document.getElementById('community');
+  let h = '';
+  G.board.forEach(c => {
+    h += `<div class="cc" style="color:${c.red?'#c0392b':'#111'}">${c.r}<span style="font-size:8px">${c.s}</span></div>`;
   });
-  for(let i=G.board.length;i<5;i++) html+=`<div class="ccard-ph"></div>`;
-  el.innerHTML=html;
+  for(let i=G.board.length; i<5; i++) h += `<div class="cc-ph"></div>`;
+  el.innerHTML = h;
 }
 
-// ═══════════════════════════════════════════════════════════
-// SPEECH PHASE
-// ═══════════════════════════════════════════════════════════
-function showSpeechPrompt(){
-  const sc=G.sc;
-  const bb=sc.blinds.bb;
-  G.streetPhase='speech';
-  G.transcript='';
-  G.checks=new Set();
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
 
-  document.getElementById('speech-prompt').style.display='block';
+// ════════════════════════════════════════════════════════
+// SITUATION PANEL — always shows full info
+// ════════════════════════════════════════════════════════
+function renderSitPanel(){
+  const sc = G.sc;
+  const bb = sc.blinds.bb;
+
+  // Topbar blind pill
+  document.getElementById('blind-pill').textContent = sc.blinds.lbl;
+
+  // Header
+  document.getElementById('sit-pot').textContent = `Pot: ${fmt(G.pot)}`;
+  document.getElementById('sit-street').textContent = cap(G.street);
+  document.getElementById('sit-hand').textContent = `${sc.heroHand.desc} · ${sc.heroPos}`;
+
+  // Situation description
+  let desc = '';
+  if(G.street==='preflop'){
+    if(sc.situation==='open'){
+      desc = `Alle vor dir haben gefoldet — du bist first-to-act in ${sc.heroPos}.`;
+    } else if(sc.situation==='facing_open'){
+      const r=sc.raiser;
+      desc = `${r.pos} (${r.seat.name} · ${TYPE_ABBR[r.seat.type]||'?'}, VPIP ${r.seat.vpip}%) hat auf ${fmt(r.amt)} open-geraist.`;
+    } else {
+      const tb=sc.threebet;
+      desc = `${tb.pos} (${tb.seat.name} · ${TYPE_ABBR[tb.seat.type]||'?'}) hat 3-bet auf ${fmt(tb.amt)}.`;
+    }
+    const aft = sc.afterHero.filter(s=>!s.folded);
+    if(aft.length) desc += ` Noch dahinter: ${aft.map(s=>`${s.pos} (${TYPE_ABBR[s.type]||'?'})`).join(', ')}.`;
+    const stackBB = Math.round(sc.heroSeat.stack/bb);
+    desc += ` Dein Stack: ${fmt(sc.heroSeat.stack)} (${stackBB}BB).`;
+  } else {
+    const opp = G.activePlayers.filter(s=>!s.isHero);
+    const boardStr = G.board.map(c=>c.r+c.s).join(' ');
+    desc = `Board: ${boardStr}. Aktiv: ${opp.map(s=>`${s.pos} (${TYPE_ABBR[s.type]||'?'})`).join(', ')}.`;
+    if(G.streetRaiser){
+      desc += ` ${G.streetRaiser.pos} (${G.streetRaiser.seat.name}) hat ${fmt(G.streetRaiser.amt)} gesetzt.`;
+    } else {
+      desc += ` Noch keine Einsätze diese Strasse — du kannst checken oder setzen.`;
+    }
+  }
+  document.getElementById('sit-desc').textContent = desc;
+
+  // Action log
+  const logEl = document.getElementById('sit-log');
+  const acts = G.streetLog.filter(e=>!e.act.includes('postet'));
+  if(!acts.length){
+    document.getElementById('sit-log-title').textContent = 'Aktionen diese Strasse:';
+    logEl.innerHTML = `<div class="sit-no-action">Noch keine Aktionen — SB ${fmt(sc.blinds.sb)}, BB ${fmt(sc.blinds.bb)} gepostet.</div>`;
+  } else {
+    document.getElementById('sit-log-title').textContent = 'Aktionen diese Strasse:';
+    logEl.innerHTML = acts.map(e=>
+      `<div class="sit-log-entry"><span class="log-who">${e.pos} (${e.name})</span><span class="${e.cls}">${e.act}${e.amt?' '+fmt(e.amt):''}</span></div>`
+    ).join('');
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// PHASE CONTROL
+// situation → speech → action
+// ════════════════════════════════════════════════════════
+function startSpeech(){
+  document.getElementById('speech-panel').style.display='block';
   document.getElementById('action-panel').style.display='none';
+  // Scroll to speech panel
+  document.getElementById('speech-panel').scrollIntoView({behavior:'smooth',block:'start'});
 
-  // Situation label
-  let sitLabel='';
-  if(G.street==='preflop'){
-    if(sc.situation==='open') sitLabel=`First-to-act in ${sc.heroPos} mit ${sc.heroHand.desc}`;
-    else if(sc.situation==='facing_open') sitLabel=`${sc.raiser.pos} (${sc.raiser.seat.name}) hat auf ${fmt(sc.raiser.amt)} geraist`;
-    else sitLabel=`Facing 3-Bet von ${sc.threebet.pos} (${sc.threebet.seat.name})`;
-  }else{
-    const activeFmt=G.activePlayers.filter(s=>!s.isHero).map(s=>`${s.pos} (${TYPE_ABBR[s.type]||'?'})`).join(', ');
-    sitLabel=`${G.street.toUpperCase()} · Pot ${fmt(G.pot)} · Aktiv: ${activeFmt}`;
-  }
-  document.getElementById('sp-situation-label').textContent=sitLabel;
-
-  // Context
-  let ctx='';
-  if(G.street==='preflop'){
-    const afterStr=sc.afterHero.filter(s=>!s.folded).map(s=>`${s.pos}: ${s.name} (${TYPE_ABBR[s.type]||'?'}, VPIP${s.vpip})`).join(' · ')||'niemand';
-    const stackBB=Math.round(sc.heroSeat.stack/bb);
-    ctx=`${sc.heroHand.desc} · ${sc.heroPos} · ${stackBB}BB · Dahinter: ${afterStr}`;
-  }else{
-    const boardStr=G.board.map(c=>c.r+c.s).join(' ');
-    ctx=`Board: ${boardStr} · Pot: ${fmt(G.pot)} · Aktive Gegner: ${G.activePlayers.filter(s=>!s.isHero).map(s=>s.name+' ('+TYPE_ABBR[s.type]+')').join(', ')}`;
-  }
-  document.getElementById('sp-context').textContent=ctx;
-
-  // Questions
-  const qs=G.street==='preflop'?SP_QUESTIONS_PREFLOP:SP_QUESTIONS_POSTFLOP;
-  document.getElementById('sp-questions').innerHTML=qs.map(q=>`<div class="sp-q">${q}</div>`).join('');
+  // Build questions
+  const qs = G.street==='preflop' ? SQ_PRE : SQ_POST;
+  document.getElementById('sp-qs').innerHTML = qs.map(q=>`<div class="sp-q">${q}</div>`).join('');
 
   // Reset recording UI
-  const btn=document.getElementById('voice-btn');
+  G.transcript=''; G.recording=false;
+  clearInterval(G.recTimer); G.recTimer=null;
+  if(G.recog){try{G.recog.stop();}catch(e){} G.recog=null;}
+  const btn = document.getElementById('voice-btn');
   btn.className='voice-btn';
-  btn.innerHTML=`<div class="rec-dot" id="rec-dot-inner"></div><span id="voice-btn-txt">Aufnehmen</span><span style="margin-left:auto;font-size:10px;color:var(--text3)" id="rec-timer-display"></span>`;
-  document.getElementById('sp-transcript').classList.remove('show');
-  document.getElementById('sp-transcript').textContent='';
-
-  if(G.recTimer){clearInterval(G.recTimer);G.recTimer=null;}
-  if(G.recognition){try{G.recognition.stop();}catch(e){}G.recognition=null;}
-  G.recording=false;
+  btn.innerHTML=`<div class="rec-dot" id="rec-dot"></div><span id="vbtn-txt">Aufnehmen</span><span id="rec-time" style="margin-left:auto;font-size:10px;color:var(--t3)"></span>`;
+  document.getElementById('sp-tx').classList.remove('show');
+  document.getElementById('sp-tx').textContent='';
+  document.getElementById('to-action-btn').classList.remove('show');
 }
 
 function skipSpeech(){
-  stopRecIfRunning();
+  stopRec();
   showActionPanel();
 }
 
 function showActionPanel(){
-  G.streetPhase='action';
-  document.getElementById('speech-prompt').style.display='none';
+  document.getElementById('speech-panel').style.display='none';
   document.getElementById('action-panel').style.display='block';
   buildActionPanel();
+  document.getElementById('action-panel').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-// ═══════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
+// RECORDING
+// ════════════════════════════════════════════════════════
+function toggleRec(){
+  if(!G.recording) startRec();
+  else {
+    stopRec();
+    document.getElementById('to-action-btn').classList.add('show');
+  }
+}
+
+function startRec(){
+  G.recording=true; G.transcript=''; G.recSec=0;
+  const btn = document.getElementById('voice-btn');
+  btn.className='voice-btn rec';
+  document.getElementById('vbtn-txt').textContent='Tippen zum Stoppen…';
+
+  const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(SR){
+    G.recog = new SR();
+    G.recog.lang='de-DE'; G.recog.continuous=true; G.recog.interimResults=true;
+    let final='';
+    G.recog.onresult = e => {
+      let interim='';
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        if(e.results[i].isFinal) final+=e.results[i][0].transcript+' ';
+        else interim+=e.results[i][0].transcript;
+      }
+      G.transcript=final+interim;
+      const tx=document.getElementById('sp-tx');
+      tx.textContent=G.transcript; tx.classList.add('show');
+    };
+    G.recog.onerror = () => {
+      document.getElementById('vbtn-txt').textContent='Mikrofon nicht verfügbar';
+    };
+    try{ G.recog.start(); }catch(e){}
+  }
+
+  G.recTimer = setInterval(()=>{
+    G.recSec++;
+    const m=Math.floor(G.recSec/60), s=G.recSec%60;
+    const el=document.getElementById('rec-time');
+    if(el) el.textContent=`${m}:${s.toString().padStart(2,'0')}`;
+  },1000);
+}
+
+function stopRec(){
+  if(!G.recording) return;
+  G.recording=false;
+  clearInterval(G.recTimer); G.recTimer=null;
+  if(G.recog){try{G.recog.stop();}catch(e){} G.recog=null;}
+  APP.recs++;
+  const btn=document.getElementById('voice-btn');
+  if(btn){
+    btn.className='voice-btn done';
+    btn.innerHTML=`<div class="done-dot" style="width:10px;height:10px;border-radius:50%;background:#1d9e75;flex-shrink:0"></div><span>Aufnahme gespeichert ✓</span>`;
+  }
+}
+
+// ════════════════════════════════════════════════════════
 // ACTION PANEL
-// ═══════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 function buildActionPanel(){
-  const sc=G.sc;
-  const bb=sc.blinds.bb;
-  const hero=G.activePlayers.find(s=>s.isHero);
-  const heroStack=hero?hero.stack:sc.heroSeat.stack;
-  const pot=G.pot;
+  const sc = G.sc;
+  const bb = sc.blinds.bb;
+  const hero = G.activePlayers.find(s=>s.isHero);
+  const heroStack = hero ? hero.stack : sc.heroSeat.stack;
+  const pot = G.pot;
+  const callAmt = G.callAmt;
 
   // Title
-  let title='Dein Zug';
-  let pill=`${G.street.charAt(0).toUpperCase()+G.street.slice(1)} · ${sc.heroPos}`;
+  let title='';
   if(G.street==='preflop'){
     if(sc.situation==='open') title=`Öffnen in ${sc.heroPos}?`;
-    else if(sc.situation==='facing_open') title=`Facing Open: ${sc.raiser.seat.name} (${TYPE_ABBR[sc.raiser.seat.type]})`;
-    else title=`Facing 3-Bet: ${sc.threebet.seat.name} (${TYPE_ABBR[sc.threebet.seat.type]})`;
-  }else{
-    const raiser=G.raiserOnStreet;
-    title=raiser?`${raiser.pos} hat gesetzt — dein Zug`:'Erster zu handeln';
+    else if(sc.situation==='facing_open') title=`Facing Open: ${sc.raiser.seat.name} (${TYPE_ABBR[sc.raiser.seat.type]||'?'})`;
+    else title=`Facing 3-Bet: ${sc.threebet.seat.name} (${TYPE_ABBR[sc.threebet.seat.type]||'?'})`;
+  } else {
+    title = G.streetRaiser ? `${G.streetRaiser.pos} (${G.streetRaiser.seat.name}) hat ${fmt(G.streetRaiser.amt)} gesetzt` : `Erster zu handeln — Check oder Bet?`;
   }
-  document.getElementById('ap-title').textContent=title;
-  document.getElementById('ap-pill').textContent=pill;
-
-  // Street banner
-  document.getElementById('street-label').textContent=G.street.charAt(0).toUpperCase()+G.street.slice(1);
-  document.getElementById('street-pot-label').textContent=`Pot: ${fmt(pot)}`;
-
-  // Log
-  const logEl=document.getElementById('action-log');
-  const filtered=G.streetLog.filter(e=>!e.act.includes('postet'));
-  if(!filtered.length){
-    logEl.innerHTML='<div class="log-entry"><span style="color:var(--text3)">Noch keine Aktionen diese Strasse.</span></div>';
-  }else{
-    logEl.innerHTML=filtered.map(e=>`<div class="log-entry"><span class="log-pos">${e.pos} (${e.name})</span><span class="${e.cls}">${e.act}${e.amt?' '+fmt(e.amt):''}</span></div>`).join('');
-  }
+  document.getElementById('ap-title').textContent = title;
+  document.getElementById('ap-pill').textContent  = `${cap(G.street)} · ${sc.heroPos}`;
 
   // Checklist
-  const clItems=G.street==='preflop'?CL_ITEMS_PREFLOP:CL_ITEMS_POSTFLOP;
-  document.getElementById('checklist').innerHTML=clItems.map((item,i)=>`
+  const clItems = G.street==='preflop' ? CL_PRE : CL_POST;
+  G.checks = new Set();
+  document.getElementById('checklist').innerHTML = clItems.map((item,i)=>`
     <div class="cl-item" id="cli${i}" onclick="toggleCheck(${i})">
       <div class="cl-cb" id="clcb${i}"></div><span>${item}</span>
     </div>`).join('');
-  G.checks=new Set();
 
-  // Bet slider
-  let minB,maxB,defB,sizeLabel,callLabel;
-  const callAmt=G.callAmt;
-
+  // Bet slider setup
+  let minB, maxB, defB, sizeLabel;
   if(callAmt===0){
     // Check or bet
-    minB=Math.round(pot*0.25/100)*100||100;
-    maxB=heroStack;
-    defB=Math.round(pot*0.65/100)*100;
-    sizeLabel='Bet'; callLabel='Check';
-    document.getElementById('bet-label').textContent='Bet-Grösse';
-  }else{
-    // Facing bet — raise or call
-    minB=callAmt*2; maxB=heroStack; defB=callAmt*3;
-    sizeLabel=G.street==='preflop'?(G.raiserOnStreet?'3-Bet':'Open'):'Raise';
-    if(G.street!=='preflop') sizeLabel='Raise';
-    callLabel=`Call ${fmt(callAmt)}`;
-    document.getElementById('bet-label').textContent='Raise-Grösse';
+    minB = Math.max(bb, Math.round(pot*0.25/100)*100);
+    maxB = heroStack;
+    defB = Math.round(pot*0.65/100)*100;
+    sizeLabel = 'Bet';
+    document.getElementById('bet-lbl').textContent = 'Bet-Grösse';
+  } else if(G.street==='preflop'){
+    minB = callAmt*2; maxB=heroStack; defB=Math.round(callAmt*3/100)*100;
+    sizeLabel = sc.situation==='open'?'Open':sc.situation==='facing_open'?'3-Bet':'4-Bet';
+    document.getElementById('bet-lbl').textContent = `${sizeLabel}-Grösse`;
+  } else {
+    minB=callAmt*2; maxB=heroStack; defB=Math.round(callAmt*2.5/100)*100;
+    sizeLabel='Raise';
+    document.getElementById('bet-lbl').textContent = 'Raise-Grösse';
   }
-  defB=Math.max(minB,Math.min(maxB,defB||minB));
-  G.betAmt=defB;
-  const sl=document.getElementById('bet-slider');
+  defB = Math.max(minB, Math.min(maxB, defB||minB));
+  G.betAmt = defB;
+  const sl = document.getElementById('bet-slider');
   sl.min=minB; sl.max=maxB; sl.step=100; sl.value=defB;
-  document.getElementById('bet-val').textContent=fmt(defB);
+  document.getElementById('bet-val').textContent = fmt(defB);
 
   // Presets
-  const ps=document.getElementById('bet-presets');
+  const ps = document.getElementById('presets');
   if(callAmt===0){
-    ps.innerHTML=`<button class="bp" onclick="setAmt(${Math.round(pot*0.33/100)*100})">⅓ Pot</button><button class="bp" onclick="setAmt(${Math.round(pot*0.5/100)*100})">½ Pot</button><button class="bp" onclick="setAmt(${Math.round(pot*0.75/100)*100})">¾ Pot</button><button class="bp" onclick="setAmt(${Math.min(heroStack,pot)})">Pot</button><button class="bp" onclick="setAmt(${heroStack})">All-in</button>`;
-  }else if(G.street==='preflop'){
+    ps.innerHTML=`
+      <button class="bp" onclick="setAmt(${Math.round(pot*0.33/100)*100})">⅓ Pot</button>
+      <button class="bp" onclick="setAmt(${Math.round(pot*0.5/100)*100})">½ Pot</button>
+      <button class="bp" onclick="setAmt(${Math.round(pot*0.75/100)*100})">¾ Pot</button>
+      <button class="bp" onclick="setAmt(${Math.min(heroStack,pot)})">Pot</button>
+      <button class="bp" onclick="setAmt(${heroStack})">All-in</button>`;
+  } else if(G.street==='preflop'){
     if(sc.situation==='open'){
-      ps.innerHTML=`<button class="bp" onclick="setAmt(${bb*2})">2BB</button><button class="bp" onclick="setAmt(${Math.round(bb*2.5/100)*100})">2.5BB</button><button class="bp" onclick="setAmt(${bb*3})">3BB</button><button class="bp" onclick="setAmt(${Math.min(heroStack,Math.round(pot/100)*100)})">Pot</button><button class="bp" onclick="setAmt(${heroStack})">All-in</button>`;
-    }else{
+      ps.innerHTML=`
+        <button class="bp" onclick="setAmt(${bb*2})">2BB</button>
+        <button class="bp" onclick="setAmt(${Math.round(bb*2.5/100)*100})">2.5BB</button>
+        <button class="bp" onclick="setAmt(${bb*3})">3BB</button>
+        <button class="bp" onclick="setAmt(${Math.min(heroStack,Math.round(pot/100)*100)})">Pot</button>
+        <button class="bp" onclick="setAmt(${heroStack})">All-in</button>`;
+    } else {
       const c=callAmt;
-      ps.innerHTML=`<button class="bp" onclick="setAmt(${Math.round(c*2.5/100)*100})">2.5×</button><button class="bp" onclick="setAmt(${Math.round(c*3/100)*100})">3×</button><button class="bp" onclick="setAmt(${Math.round(c*3.5/100)*100})">3.5×</button><button class="bp" onclick="setAmt(${Math.min(heroStack,Math.round(pot/100)*100)})">Pot</button><button class="bp" onclick="setAmt(${heroStack})">All-in</button>`;
+      ps.innerHTML=`
+        <button class="bp" onclick="setAmt(${Math.round(c*2.5/100)*100})">2.5×</button>
+        <button class="bp" onclick="setAmt(${Math.round(c*3/100)*100})">3×</button>
+        <button class="bp" onclick="setAmt(${Math.round(c*3.5/100)*100})">3.5×</button>
+        <button class="bp" onclick="setAmt(${Math.min(heroStack,Math.round(pot/100)*100)})">Pot</button>
+        <button class="bp" onclick="setAmt(${heroStack})">All-in</button>`;
     }
-  }else{
+  } else {
     const c=callAmt;
-    ps.innerHTML=`<button class="bp" onclick="setAmt(${Math.round(c*2/100)*100})">2×</button><button class="bp" onclick="setAmt(${Math.round(c*2.5/100)*100})">2.5×</button><button class="bp" onclick="setAmt(${Math.round(pot*0.75/100)*100})">¾P</button><button class="bp" onclick="setAmt(${Math.min(heroStack,pot)})">Pot</button><button class="bp" onclick="setAmt(${heroStack})">All-in</button>`;
+    ps.innerHTML=`
+      <button class="bp" onclick="setAmt(${Math.round(c*2/100)*100})">2×</button>
+      <button class="bp" onclick="setAmt(${Math.round(c*2.5/100)*100})">2.5×</button>
+      <button class="bp" onclick="setAmt(${Math.round(pot*0.75/100)*100})">¾ Pot</button>
+      <button class="bp" onclick="setAmt(${Math.min(heroStack,pot)})">Pot</button>
+      <button class="bp" onclick="setAmt(${heroStack})">All-in</button>`;
   }
 
-  // Update raise btn label
+  // Action buttons
+  const callLabel = callAmt===0 ? 'Check' : `Call ${fmt(callAmt)}`;
   document.getElementById('act-btns').innerHTML=`
     <button class="act fold" onclick="doAction('fold')">Fold</button>
-    <button class="act call" onclick="doAction('call')">${callLabel}</button>
-    <button class="act raise" id="raise-dyn" onclick="doAction('raise')">${sizeLabel} ${fmt(defB)}</button>`;
+    <button class="act ${callAmt===0?'check':'call'}" onclick="doAction('call')">${callLabel}</button>
+    <button class="act raise" id="raise-btn" onclick="doAction('raise')">${sizeLabel} ${fmt(defB)}</button>`;
 
-  // Sit info
-  const stackBB=Math.round(heroStack/bb);
-  const potOdds=callAmt?Math.round(callAmt/(pot+callAmt)*100):null;
-  document.getElementById('sit-info').innerHTML=
-    `<span>Blinds: ${sc.blinds.label}</span><span>Stack: ${fmt(heroStack)} (${stackBB}BB)</span><span>Pot: ${fmt(pot)}</span>${potOdds?`<span>Pot Odds: ${potOdds}%</span>`:''}`;
+  // Footer info
+  const stackBB = Math.round(heroStack/bb);
+  const potOdds = callAmt>0 ? Math.round(callAmt/(pot+callAmt)*100) : null;
+  document.getElementById('sit-foot').innerHTML=
+    `<span>Blinds: ${sc.blinds.lbl}</span><span>Stack: ${fmt(heroStack)} (${stackBB}BB)</span><span>Pot: ${fmt(pot)}</span>${potOdds?`<span>Pot Odds: ${potOdds}%</span>`:''}`;
 }
 
-// ═══════════════════════════════════════════════════════════
-// CONTROLS
-// ═══════════════════════════════════════════════════════════
 function updateBet(){
   const v=parseInt(document.getElementById('bet-slider').value);
   G.betAmt=v;
   document.getElementById('bet-val').textContent=fmt(v);
   const sc=G.sc;
-  let lbl;
-  if(G.callAmt===0) lbl='Bet';
-  else if(G.street==='preflop') lbl=sc.situation==='open'?'Open':sc.situation==='facing_open'?'3-Bet':'4-Bet';
-  else lbl='Raise';
-  const b=document.getElementById('raise-dyn');
-  if(b) b.textContent=`${lbl} ${fmt(v)}`;
+  let lbl='Bet';
+  if(G.callAmt>0){
+    if(G.street==='preflop') lbl=sc.situation==='open'?'Open':sc.situation==='facing_open'?'3-Bet':'4-Bet';
+    else lbl='Raise';
+  }
+  const btn=document.getElementById('raise-btn');
+  if(btn) btn.textContent=`${lbl} ${fmt(v)}`;
 }
 
 function setAmt(v){
@@ -916,414 +959,342 @@ function setAmt(v){
   sl.value=v; G.betAmt=v;
   document.getElementById('bet-val').textContent=fmt(v);
   const sc=G.sc;
-  let lbl;
-  if(G.callAmt===0) lbl='Bet';
-  else if(G.street==='preflop') lbl=sc.situation==='open'?'Open':sc.situation==='facing_open'?'3-Bet':'4-Bet';
-  else lbl='Raise';
-  const b=document.getElementById('raise-dyn');
-  if(b) b.textContent=`${lbl} ${fmt(v)}`;
+  let lbl='Bet';
+  if(G.callAmt>0){
+    if(G.street==='preflop') lbl=sc.situation==='open'?'Open':sc.situation==='facing_open'?'3-Bet':'4-Bet';
+    else lbl='Raise';
+  }
+  const btn=document.getElementById('raise-btn');
+  if(btn) btn.textContent=`${lbl} ${fmt(v)}`;
 }
 
 function toggleCheck(i){
-  const cb=document.getElementById('clcb'+i),row=document.getElementById('cli'+i);
+  const cb=document.getElementById('clcb'+i), row=document.getElementById('cli'+i);
   if(G.checks.has(i)){G.checks.delete(i);cb.classList.remove('on');row.classList.remove('done');}
   else{G.checks.add(i);cb.classList.add('on');row.classList.add('done');}
 }
 
-// ═══════════════════════════════════════════════════════════
-// SPEECH RECORDING
-// ═══════════════════════════════════════════════════════════
-function toggleRec(){
-  if(!G.recording){
-    startRec();
-  }else{
-    stopRecIfRunning();
-    // After stopping, show action panel
-    setTimeout(()=>showActionPanel(),400);
-  }
-}
-
-function startRec(){
-  G.recording=true; G.transcript=''; G.recSec=0;
-  const btn=document.getElementById('voice-btn');
-  btn.className='voice-btn recording';
-  document.getElementById('voice-btn-txt').textContent='Tippen zum Stoppen…';
-
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(SR){
-    G.recognition=new SR();
-    G.recognition.lang='de-DE';
-    G.recognition.continuous=true;
-    G.recognition.interimResults=true;
-    let final='';
-    G.recognition.onresult=e=>{
-      let interim='';
-      for(let i=e.resultIndex;i<e.results.length;i++){
-        if(e.results[i].isFinal) final+=e.results[i][0].transcript+' ';
-        else interim+=e.results[i][0].transcript;
-      }
-      G.transcript=final+interim;
-      const tEl=document.getElementById('sp-transcript');
-      tEl.textContent=G.transcript;
-      tEl.classList.add('show');
-    };
-    G.recognition.onerror=()=>{
-      document.getElementById('voice-btn-txt').textContent='Mikrofon nicht verfügbar — tippe Stopp';
-    };
-    try{G.recognition.start();}catch(e){}
-  }
-
-  G.recTimer=setInterval(()=>{
-    G.recSec++;
-    const m=Math.floor(G.recSec/60),s=G.recSec%60;
-    const d=document.getElementById('rec-timer-display');
-    if(d) d.textContent=`${m}:${s.toString().padStart(2,'0')}`;
-  },1000);
-}
-
-function stopRecIfRunning(){
-  if(!G.recording) return;
-  G.recording=false;
-  clearInterval(G.recTimer); G.recTimer=null;
-  if(G.recognition){try{G.recognition.stop();}catch(e){} G.recognition=null;}
-  APP.recs++;
-  const btn=document.getElementById('voice-btn');
-  if(btn){
-    btn.className='voice-btn done';
-    btn.innerHTML=`<div class="done-dot"></div><span>Aufnahme gespeichert ✓</span>`;
-  }
-}
-
-// ═══════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // ACTIONS & GAME FLOW
-// ═══════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 function doAction(action){
-  const sc=G.sc;
-  const bb=sc.blinds.bb;
-  const hero=G.activePlayers.find(s=>s.isHero);
+  const sc = G.sc;
+  const bb = sc.blinds.bb;
+  const hero = G.activePlayers.find(s=>s.isHero);
+  const callAmt = G.callAmt;
 
   // Build action string
-  const callAmt=G.callAmt;
   let actionStr;
   if(action==='fold') actionStr='FOLD';
-  else if(action==='call') actionStr=callAmt===0?'CHECK':`CALL ${fmt(callAmt)}`;
-  else{
-    const lbl=callAmt===0?'BET':G.street==='preflop'?(sc.situation==='open'?'OPEN-RAISE':sc.situation==='facing_open'?'3-BET':'4-BET'):'RAISE';
-    actionStr=`${lbl} auf ${fmt(G.betAmt)} (${(G.betAmt/bb).toFixed(1)}BB)`;
+  else if(action==='call') actionStr = callAmt===0?'CHECK':`CALL ${fmt(callAmt)}`;
+  else {
+    const lbl = callAmt===0?'BET':(G.street==='preflop'?(sc.situation==='open'?'OPEN-RAISE':sc.situation==='facing_open'?'3-BET':'4-BET'):'RAISE');
+    actionStr = `${lbl} auf ${fmt(G.betAmt)} (${(G.betAmt/bb).toFixed(1)}BB)`;
   }
 
-  // Record this decision
-  const boardStr=G.board.map(c=>c.r+c.s).join(' ')||'(Preflop)';
-  const activeOpp=G.activePlayers.filter(s=>!s.isHero).map(s=>`${s.pos}: ${s.name} (${s.type}, VPIP${s.vpip}/PFR${s.pfr})`).join('; ');
+  // Build context for log
+  const boardStr = G.board.map(c=>c.r+c.s).join(' ')||'(Preflop — kein Board)';
+  const oppDesc = G.activePlayers.filter(s=>!s.isHero)
+    .map(s=>`${s.pos}: ${s.name} (${s.type}, VPIP ${s.vpip}%, PFR ${s.pfr}%)`)
+    .join('; ');
+
+  const clItems = G.street==='preflop' ? CL_PRE : CL_POST;
+  const checkStatus = clItems.map((item,i)=>`${G.checks.has(i)?'✓':'✗'} ${item}`).join('\n');
+
+  // Record decision
   G.handLog.push({
-    street:G.street,
-    action:actionStr,
-    betAmt:action==='raise'?G.betAmt:callAmt,
-    transcript:G.transcript||'(keine Aufnahme)',
-    checks:G.checks.size,
-    checkItems:CL_ITEMS_PREFLOP.map((item,i)=>`${G.checks.has(i)?'✓':'✗'} ${item}`).join('\n'),
-    context:{
-      hand:sc.heroHand.desc, pos:sc.heroPos,
-      stack:hero?hero.stack:sc.heroSeat.stack,
-      bb, pot:G.pot, board:boardStr, opponents:activeOpp,
-      situation:G.street==='preflop'?sc.situation:'postflop',
+    street: G.street,
+    action: actionStr,
+    betAmt: action==='raise' ? G.betAmt : callAmt,
+    transcript: G.transcript || '(keine Aufnahme)',
+    checksCount: G.checks.size,
+    checkStatus,
+    context: {
+      hand: sc.heroHand.desc,
+      pos: sc.heroPos,
+      stack: hero ? hero.stack : sc.heroSeat.stack,
+      bb, pot: G.pot,
+      board: boardStr,
+      opponents: oppDesc,
+      situation: G.street==='preflop' ? sc.situation : 'postflop',
+      callAmt,
     },
   });
 
+  // Update hero stack
+  if(action==='call' && callAmt>0 && hero){
+    hero.stack = Math.max(0, hero.stack - callAmt);
+    G.pot += callAmt;
+  } else if(action==='raise' && hero){
+    hero.stack = Math.max(0, hero.stack - G.betAmt);
+    G.pot += G.betAmt;
+  }
+
   if(action==='fold'){
-    G.heroFolded=true;
-    finishHand();
-    return;
+    finishHand(); return;
   }
 
-  // Update stacks
-  if(action==='call'&&callAmt>0&&hero){
-    hero.stack=Math.max(0,hero.stack-callAmt);
-    G.pot+=callAmt;
-  }else if(action==='raise'&&hero){
-    hero.stack=Math.max(0,hero.stack-G.betAmt);
-    G.pot+=G.betAmt;
-  }
-
-  // Simulate opponents reacting then advance street
+  // Advance to next street
   advanceStreet();
 }
 
 function advanceStreet(){
-  const sc=G.sc;
-  const streets=['preflop','flop','turn','river'];
-  const currentIdx=streets.indexOf(G.street);
+  const streets = ['preflop','flop','turn','river'];
+  const idx = streets.indexOf(G.street);
+  if(idx>=3){ finishHand(); return; }
 
-  if(currentIdx>=3){
-    finishHand();
-    return;
-  }
-
-  // Simulate remaining opponents acting postflop (simplified)
-  G.activePlayers=G.activePlayers.filter(s=>{
+  // Simulate opponent actions (simplified — some fold, some stay)
+  G.activePlayers = G.activePlayers.filter(s=>{
     if(s.isHero) return true;
-    // Random opponent decision based on player type
-    const fold=Math.random()<(s.postflop?.foldToBet||0.4);
-    return !fold; // keep if not folded
+    const foldChance = s.pfFold || 0.4;
+    return Math.random() > foldChance * 0.7; // lower to keep more players
   });
+  if(G.activePlayers.filter(s=>!s.isHero).length===0){ finishHand(); return; }
 
-  if(G.activePlayers.filter(s=>!s.isHero).length===0){
-    finishHand(); return;
-  }
+  G.street = streets[idx+1];
+  G.streetLog = [];
+  G.streetRaiser = null;
+  G.callAmt = 0;
 
-  // Next street
-  G.street=streets[currentIdx+1];
-  G.streetLog=[];
-  G.raiserOnStreet=null;
-  G.callAmt=0;
+  // Deal board
+  const sc = G.sc;
+  if(G.street==='flop')  G.board = [...sc.flop];
+  if(G.street==='turn')  G.board = [...sc.flop, sc.turn];
+  if(G.street==='river') G.board = [...sc.flop, sc.turn, sc.river];
 
-  // Deal board card(s)
-  if(G.street==='flop') G.board=[...sc.flop];
-  else if(G.street==='turn') G.board=[...sc.flop,sc.turn];
-  else if(G.street==='river') G.board=[...sc.flop,sc.turn,sc.river];
-
-  // Random opponent bet?
-  const opp=G.activePlayers.filter(s=>!s.isHero);
-  if(opp.length>0){
-    const firstOpp=opp[0];
-    if(Math.random()<(firstOpp.postflop?.cbet||0.5)){
-      const betAmt=Math.round(G.pot*rnd(40,75)/100/100)*100||200;
-      G.callAmt=betAmt;
-      G.raiserOnStreet={pos:firstOpp.pos,seat:firstOpp,amt:betAmt};
-      G.streetLog.push({pos:firstOpp.pos,name:firstOpp.name,act:'setzt',amt:betAmt,cls:'c-raise'});
-      G.pot+=betAmt; // tentative, will adjust on hero call
+  // Simulate opponent lead bet (sometimes)
+  const opps = G.activePlayers.filter(s=>!s.isHero);
+  if(opps.length>0){
+    const opp = opps[0];
+    const cbetChance = opp.pfCbet||0.5;
+    if(Math.random() < cbetChance){
+      const betAmt = Math.round(G.pot*rnd(40,75)/100/100)*100||200;
+      G.callAmt = betAmt;
+      G.streetRaiser = {pos:opp.pos, seat:opp, amt:betAmt};
+      // Track as bet on street log
+      G.streetLog.push({pos:opp.pos, name:opp.name, act:'setzt', amt:betAmt, cls:'c-raise'});
+      // Mark on seat
+      opp.currentBet = betAmt;
+      G.pot += betAmt;
     }
   }
 
+  // Reset speech/action UI
+  document.getElementById('speech-panel').style.display='none';
+  document.getElementById('action-panel').style.display='none';
+
   renderTable();
-  updateStreetBanner();
-  showSpeechPrompt();
+  renderSitPanel();
   window.scrollTo(0,0);
 }
 
-function updateStreetBanner(){
-  document.getElementById('street-label').textContent=G.street.charAt(0).toUpperCase()+G.street.slice(1);
-  document.getElementById('street-pot-label').textContent=`Pot: ${fmt(G.pot)}`;
-  document.getElementById('street-actions-done').textContent=`${G.handLog.length} Entscheid${G.handLog.length!==1?'e':''}`;
-}
-
-// ═══════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // FINISH & REVIEW
-// ═══════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 function finishHand(){
-  document.getElementById('speech-prompt').style.display='none';
+  document.getElementById('speech-panel').style.display='none';
   document.getElementById('action-panel').style.display='none';
-  document.getElementById('review-overlay').classList.add('show');
+  document.getElementById('rv-overlay').classList.add('show');
 
-  const sc=G.sc;
+  const sc = G.sc;
   document.getElementById('rv-title').textContent=`Hand-Auswertung: ${sc.heroHand.desc} in ${sc.heroPos}`;
-  document.getElementById('rv-sub').textContent=`${sc.blinds.label} · ${G.handLog.length} Entscheide · Board: ${G.board.map(c=>c.r+c.s).join(' ')||'—'}`;
-  document.getElementById('rv-scores-row').innerHTML='';
-  document.getElementById('rv-body').innerHTML='<div class="loading-state"><div class="spinner"></div><div>Claude analysiert die gesamte Hand…</div></div>';
+  document.getElementById('rv-sub').textContent=`${sc.blinds.lbl} · ${G.handLog.length} Entscheid${G.handLog.length!==1?'e':''} · Board: ${G.board.map(c=>c.r+c.s).join(' ')||'—'}`;
+  document.getElementById('rv-pills').innerHTML='';
+  document.getElementById('rv-body').innerHTML='<div class="loading"><div class="spinner"></div><br>Claude analysiert die gesamte Hand…</div>';
 
   requestAnalysis();
 }
 
 async function requestAnalysis(){
-  const sc=G.sc;
-  // Reveal opponent hole cards
-  const oppCards=sc.seats.filter(s=>!s.isHero&&!s.folded).map(s=>`${s.pos} (${s.name}): ${s.holeCards.desc}`).join(', ');
+  const sc = G.sc;
+  const oppCards = sc.seats.filter(s=>!s.isHero&&!s.folded)
+    .map(s=>`${s.pos} (${s.name}, ${s.type}): [Hole Cards verdeckt — bewertet nach Spielertyp]`)
+    .join('\n');
 
-  const decisionsText=G.handLog.map((d,i)=>`
---- Entscheid ${i+1}: ${d.street.toUpperCase()} ---
+  const decisionsText = G.handLog.map((d,i)=>`
+Entscheid ${i+1}: ${d.street.toUpperCase()}
 Aktion: ${d.action}
 Hand: ${d.context.hand} | Position: ${d.context.pos} | Stack: ${fmt(d.context.stack)} | Pot: ${fmt(d.context.pot)}
 Board: ${d.context.board}
+Call to: ${d.context.callAmt>0?fmt(d.context.callAmt):'kein Einsatz'}
 Aktive Gegner: ${d.context.opponents}
-Denkprozess (${d.checks}/5 abgehakt):
-${d.checkItems}
-Sprachnotiz: "${d.transcript}"`).join('\n');
+Denkprozess (${d.checksCount}/5 abgehakt):
+${d.checkStatus}
+Sprachnotiz: "${d.transcript}"`).join('\n---\n');
 
-  const prompt=`Du bist ein erfahrener No-Limit Hold'em MTT-Coach. Analysiere diese komplette gespielte Hand und bewerte alle Entscheide des Spielers. Niveau: zwischen Recreational und Semi-Pro, Live MTT.
+  const prompt = `Du bist ein erfahrener No-Limit Hold'em MTT-Coach. Analysiere diese vollständige Hand und gib strukturiertes Feedback zu allen Entscheiden. Der Spieler ist zwischen Recreational und Semi-Pro, spielt Live MTT.
 
-HANDÜBERSICHT:
-- Karten: ${sc.heroHand.desc}, Position: ${sc.heroPos}
-- Blinds: ${sc.blinds.label}
-- Finale Board: ${G.board.map(c=>c.r+c.s).join(' ')||'(kein Flop)'}
-- Aufgedeckte Gegner-Karten: ${oppCards||'—'}
+HAND-ÜBERSICHT:
+Karten: ${sc.heroHand.desc} | Position: ${sc.heroPos} | Blinds: ${sc.blinds.lbl}
+Finales Board: ${G.board.map(c=>c.r+c.s).join(' ')||'(Preflop gefoldet)'}
+Gegner: ${sc.seats.filter(s=>!s.isHero).map(s=>`${s.pos}: ${s.name} (${s.type}, VPIP ${s.vpip}%, PFR ${s.pfr}%)`).join('; ')}
 
-ALLE ENTSCHEIDE:
+ENTSCHEIDE:
 ${decisionsText}
 
-Bewerte die gesamte Hand. Analysiere jeden Entscheid einzeln und gib am Schluss eine Gesamtbewertung mit Skill-Scores.
+Analysiere jeden Entscheid einzeln und gib eine Gesamtbewertung. Beziehe die konkreten Spielertypen in jede Analyse ein.
 
-Antworte NUR als JSON ohne Backticks:
+Antworte AUSSCHLIESSLICH als JSON ohne Backticks oder anderer Text:
 {
   "gesamtscore": <0-100>,
-  "zusammenfassung": "<2-3 Sätze Gesamtfazit>",
+  "zusammenfassung": "<2-3 Sätze Gesamtfazit der Hand>",
   "entscheide": [
     {
       "street": "<street>",
-      "aktion": "<aktion>",
+      "aktion": "<kurze Aktionsbeschreibung>",
       "score": <0-100>,
       "entscheidung": "<optimal|gut|suboptimal|fehler>",
-      "feedback": "<2-3 Sätze konkretes Feedback>",
-      "sprachnotiz_analyse": "<1 Satz zur Sprachnotiz>"
+      "feedback": "<3-4 Sätze konkretes Coaching-Feedback>",
+      "sprachnotiz": "<1 Satz zur Qualität der Sprachnotiz>"
     }
   ],
   "staerken": "<Was hat der Spieler gut gemacht?>",
-  "schwaechen": "<Was sollte verbessert werden?>",
-  "key_lesson": "<Die wichtigste Lerneinheit dieser Hand>",
-  "skill_scores": {"range":<0-100>,"board":<0-100>,"player":<0-100>,"process":<0-100>,"odds":<0-100>},
+  "schwaechen": "<Was muss verbessert werden?>",
+  "key_lesson": "<Die wichtigste Lerneinheit dieser Hand — 1 klarer Satz>",
+  "skill_scores": {
+    "range": <0-100>,
+    "board": <0-100>,
+    "player": <0-100>,
+    "process": <0-100>,
+    "odds": <0-100>
+  },
   "tags": ["<tag1>","<tag2>","<tag3>"]
 }`;
 
-  const apiKey=APP.apiKey;
-  if(!apiKey){
-    showNoKeyMessage();
-    return;
+  if(!APP.apiKey){
+    showNoKey(); return;
   }
 
-  try{
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-api-key':apiKey,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true',
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': APP.apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
       },
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1500,
-        messages:[{role:'user',content:prompt}]
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 1500,
+        messages: [{role:'user',content:prompt}]
       })
     });
+
     if(!resp.ok){
-      const err=await resp.text();
-      throw new Error(`HTTP ${resp.status}: ${err.substring(0,200)}`);
+      const err = await resp.text();
+      throw new Error(`HTTP ${resp.status}: ${err.substring(0,300)}`);
     }
-    const data=await resp.json();
-    const raw=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
-    const r=JSON.parse(raw.replace(/```json|```/g,'').trim());
+
+    const data = await resp.json();
+    const raw = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const r = JSON.parse(raw.replace(/```json|```/g,'').trim());
 
     // Update stats
     APP.hands++;
     APP.scores.push(r.gesamtscore);
     for(const k of Object.keys(r.skill_scores||{})){
-      APP.skill[k]=(APP.skill[k]*APP.skillN[k]+r.skill_scores[k])/(APP.skillN[k]+1);
+      APP.skill[k] = (APP.skill[k]*APP.skillN[k]+r.skill_scores[k])/(APP.skillN[k]+1);
       APP.skillN[k]++;
     }
     APP.history.unshift({
-      hand:sc.heroHand.desc,pos:sc.heroPos,
-      blinds:sc.blinds.label,
-      score:r.gesamtscore,
-      zusammenfassung:r.zusammenfassung,
-      key_lesson:r.key_lesson,
-      timestamp:Date.now(),
+      hand: G.sc.heroHand.desc, pos: G.sc.heroPos,
+      blinds: G.sc.blinds.lbl,
+      score: r.gesamtscore,
+      zusammenfassung: r.zusammenfassung,
+      key_lesson: r.key_lesson,
+      timestamp: Date.now(),
     });
     if(APP.history.length>50) APP.history.pop();
     saveApp();
 
     renderReview(r);
-  }catch(e){
+
+  } catch(e){
     document.getElementById('rv-body').innerHTML=`
       <div style="padding:16px">
-        <div style="font-size:13px;font-weight:700;color:var(--red-text);margin-bottom:8px">Analyse fehlgeschlagen</div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:12px">${e.message}</div>
-        <div style="font-size:11px;color:var(--text3)">Bitte überprüfe deinen API-Key in den Settings.</div>
-        <div style="margin-top:12px;display:flex;gap:8px">
-          <button class="rv-btn" onclick="document.getElementById('review-overlay').classList.remove('show');go('settings')">Settings öffnen</button>
-          <button class="rv-btn primary" onclick="document.getElementById('review-overlay').classList.remove('show');newHand()">Neue Hand</button>
+        <div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:8px">Analyse fehlgeschlagen</div>
+        <div style="font-size:12px;color:var(--t2);margin-bottom:12px;word-break:break-all">${e.message}</div>
+        <div style="font-size:11px;color:var(--t3);margin-bottom:14px">Bitte prüfe deinen API-Key in den Settings.</div>
+        <div style="display:flex;gap:8px">
+          <button class="rv-btn" onclick="document.getElementById('rv-overlay').classList.remove('show');go('settings')">Settings öffnen</button>
+          <button class="rv-btn primary" onclick="document.getElementById('rv-overlay').classList.remove('show');newHand()">Neue Hand ▶</button>
         </div>
       </div>`;
   }
 }
 
-function showNoKeyMessage(){
+function showNoKey(){
   document.getElementById('rv-body').innerHTML=`
     <div style="padding:16px">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px">API-Key fehlt</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Gib deinen Anthropic API-Key in den Settings ein, damit die KI-Analyse funktioniert.</div>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:14px">Gib deinen Anthropic API-Key in den Settings ein.</div>
       <div style="display:flex;gap:8px">
-        <button class="rv-btn" onclick="document.getElementById('review-overlay').classList.remove('show');go('settings')">Settings ↗</button>
-        <button class="rv-btn primary" onclick="document.getElementById('review-overlay').classList.remove('show');newHand()">Neue Hand</button>
+        <button class="rv-btn" onclick="document.getElementById('rv-overlay').classList.remove('show');go('settings')">Settings ↗</button>
+        <button class="rv-btn primary" onclick="document.getElementById('rv-overlay').classList.remove('show');newHand()">Neue Hand</button>
       </div>
     </div>`;
 }
 
 function renderReview(r){
-  const sc2=r.gesamtscore>=70?'#085041':r.gesamtscore>=50?'#633806':'#791F1F';
-  const sb2=r.gesamtscore>=70?'#E1F5EE':r.gesamtscore>=50?'#FAEEDA':'#FCEBEB';
+  const gs = scoreColors(r.gesamtscore);
+  // Score pills
+  let pillsHtml = `<span class="rv-pill" style="background:${gs.bg};color:${gs.tc}">Gesamt: ${Math.round(r.gesamtscore)}/100</span>`;
+  (r.entscheide||[]).forEach(d=>{
+    const dc=scoreColors(d.score);
+    pillsHtml+=`<span class="rv-pill" style="background:${dc.bg};color:${dc.tc}">${cap(d.street)}: ${Math.round(d.score)}</span>`;
+  });
+  document.getElementById('rv-pills').innerHTML=pillsHtml;
 
-  // Score pills row
-  document.getElementById('rv-scores-row').innerHTML=
-    `<span class="rv-score-pill" style="background:${sb2};color:${sc2}">Gesamt: ${Math.round(r.gesamtscore)}/100</span>`+
-    (r.entscheide||[]).map(d=>{
-      const dc=d.score>=70?'#085041':d.score>=50?'#633806':'#791F1F';
-      const db=d.score>=70?'#E1F5EE':d.score>=50?'#FAEEDA':'#FCEBEB';
-      return `<span class="rv-score-pill" style="background:${db};color:${dc}">${d.street.charAt(0).toUpperCase()+d.street.slice(1)}: ${Math.round(d.score)}</span>`;
-    }).join('');
-
-  // Per-decision blocks
+  // Decision blocks
   const decHtml=(r.entscheide||[]).map(d=>{
-    const eb={optimal:'#E1F5EE',gut:'#EAF3DE',suboptimal:'#FAEEDA',fehler:'#FCEBEB'}[d.entscheidung]||'#F1EFE8';
-    const ec={optimal:'#085041',gut:'#27500A',suboptimal:'#633806',fehler:'#791F1F'}[d.entscheidung]||'#5F5E5A';
-    const dc=d.score>=70?'#085041':d.score>=50?'#633806':'#791F1F';
-    const db=d.score>=70?'#E1F5EE':d.score>=50?'#FAEEDA':'#FCEBEB';
-    return `<div class="rv-decision">
+    const dc=scoreColors(d.score);
+    const ec=entschColors(d.entscheidung);
+    return `<div class="rv-dec">
       <div class="rv-dec-head">
-        <span class="rv-dec-street">${d.street.toUpperCase()}</span>
-        <span class="rv-dec-score" style="background:${db};color:${dc}">${Math.round(d.score)}/100</span>
+        <span class="rv-dec-st">${cap(d.street)}</span>
+        <span class="rv-dec-sc" style="background:${dc.bg};color:${dc.tc}">${Math.round(d.score)}/100</span>
       </div>
-      <div class="rv-dec-action">
-        <span style="font-size:10px;padding:1px 6px;border-radius:6px;background:${eb};color:${ec};font-weight:700">${(d.entscheidung||'').toUpperCase()}</span>
+      <div class="rv-dec-act">
+        <span style="font-size:10px;padding:1px 7px;border-radius:6px;background:${ec.bg};color:${ec.tc};font-weight:700">${(d.entscheidung||'').toUpperCase()}</span>
         <span style="margin-left:6px">${d.aktion}</span>
       </div>
-      <div class="rv-dec-fb">${d.feedback||''}${d.sprachnotiz_analyse?`<br><span style="color:var(--text3);font-size:11px">Sprachnotiz: ${d.sprachnotiz_analyse}</span>`:''}</div>
+      <div class="rv-dec-fb">${d.feedback||''}${d.sprachnotiz?`<br><span style="color:var(--t3);font-size:11px;font-style:italic">Sprachnotiz: ${d.sprachnotiz}</span>`:''}</div>
     </div>`;
   }).join('');
 
   const tags=(r.tags||[]).map(t=>`<span class="rv-tag">${t}</span>`).join('');
 
   document.getElementById('rv-body').innerHTML=`
-    <div class="rv-section">
-      <div class="rv-sec-t">Zusammenfassung</div>
-      <div class="rv-sec-body">${r.zusammenfassung||''}</div>
-    </div>
+    <div class="rv-sec"><div class="rv-sec-t">Zusammenfassung</div><div class="rv-sec-b">${r.zusammenfassung||''}</div></div>
     ${decHtml}
-    <div class="rv-section">
-      <div class="rv-sec-t">Stärken</div>
-      <div class="rv-sec-body">${r.staerken||''}</div>
-    </div>
-    <div class="rv-section">
-      <div class="rv-sec-t">Verbesserungspotential</div>
-      <div class="rv-sec-body">${r.schwaechen||''}</div>
-    </div>
-    <div class="rv-section">
-      <div class="rv-sec-t">Key Lesson dieser Hand</div>
-      <div class="rv-sec-body" style="font-weight:600;color:var(--text)">${r.key_lesson||''}</div>
-    </div>
+    <div class="rv-sec"><div class="rv-sec-t">Stärken</div><div class="rv-sec-b">${r.staerken||''}</div></div>
+    <div class="rv-sec"><div class="rv-sec-t">Verbesserung</div><div class="rv-sec-b">${r.schwaechen||''}</div></div>
+    <div class="rv-sec"><div class="rv-sec-t">Key Lesson</div><div class="rv-sec-b" style="font-weight:700;color:var(--text)">${r.key_lesson||''}</div></div>
     <div class="rv-tags">${tags}</div>
     <div class="rv-btns">
-      <button class="rv-btn" onclick="document.getElementById('review-overlay').classList.remove('show')">Schliessen</button>
-      <button class="rv-btn primary" onclick="document.getElementById('review-overlay').classList.remove('show');newHand()">Neue Hand ▶</button>
+      <button class="rv-btn" onclick="document.getElementById('rv-overlay').classList.remove('show')">Schliessen</button>
+      <button class="rv-btn primary" onclick="document.getElementById('rv-overlay').classList.remove('show');newHand()">Neue Hand ▶</button>
     </div>`;
 }
 
-// ═══════════════════════════════════════════════════════════
-// SCREENS
-// ═══════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
+// OTHER SCREENS
+// ════════════════════════════════════════════════════════
 function renderHistory(){
   const el=document.getElementById('history-list');
-  if(!APP.history.length){el.innerHTML='<div style="padding:40px 16px;text-align:center;font-size:13px;color:var(--text3)">Noch keine Hände gespielt.</div>';return;}
+  if(!APP.history.length){el.innerHTML='<div style="padding:40px 16px;text-align:center;font-size:13px;color:var(--t3)">Noch keine Hände gespielt.</div>';return;}
   el.innerHTML=APP.history.map(h=>{
-    const sc2=h.score>=70?'#085041':h.score>=50?'#633806':'#791F1F';
-    const sb2=h.score>=70?'#E1F5EE':h.score>=50?'#FAEEDA':'#FCEBEB';
+    const c=scoreColors(h.score);
     const dt=new Date(h.timestamp).toLocaleString('de-CH',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
     return `<div class="hist-item">
-      <div class="hist-head">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
         <span style="font-size:12px;font-weight:700;color:var(--text)">${h.hand} · ${h.pos} · ${h.blinds}</span>
-        <span class="hist-score" style="background:${sb2};color:${sc2}">${Math.round(h.score)}/100</span>
+        <span style="font-size:11px;padding:2px 8px;border-radius:8px;font-weight:700;background:${c.bg};color:${c.tc}">${Math.round(h.score)}/100</span>
       </div>
-      <div style="font-size:12px;color:var(--text2);margin-top:3px">${h.zusammenfassung||''}</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:4px;font-style:italic">${h.key_lesson||''}</div>
-      <div style="font-size:10px;color:var(--text3);margin-top:3px">${dt}</div>
+      <div style="font-size:12px;color:var(--t2)">${h.zusammenfassung||''}</div>
+      <div style="font-size:11px;color:var(--t3);margin-top:4px;font-style:italic">${h.key_lesson||''}</div>
+      <div style="font-size:10px;color:var(--t3);margin-top:3px">${dt}</div>
     </div>`;
   }).join('');
 }
@@ -1340,90 +1311,86 @@ function renderStats(){
     <div class="stat-c"><div class="stat-l">Stärkstes Gebiet</div><div class="stat-v" style="font-size:13px">${bk?sn[bk]:'—'}</div></div>`;
   document.getElementById('skill-bars').innerHTML=SKILLS.map(sk=>{
     const p=APP.skillN[sk.key]>0?Math.round(APP.skill[sk.key]):0;
-    return `<div class="skill-row"><span class="skill-nm">${sk.name}</span><div class="skill-bg"><div class="skill-fill" style="width:${p}%;background:${sk.color}"></div></div><span class="skill-pc">${p}%</span></div>`;
+    return `<div class="skill-row"><span class="skill-nm">${sk.name}</span><div class="skill-bg"><div class="skill-fill" style="width:${p}%;background:${sk.col}"></div></div><span class="skill-pc">${p}%</span></div>`;
   }).join('');
 }
 
 function renderSettings(){
-  const input=document.getElementById('api-key-input');
-  const status=document.getElementById('api-key-status');
-  if(APP.apiKey){
-    input.value=APP.apiKey;
-    status.textContent='✓ Key gespeichert';
-    status.style.color='var(--green-text)';
-  }else{
-    status.textContent='Kein Key gespeichert';
-    status.style.color='var(--text3)';
-  }
+  const inp=document.getElementById('api-key-input');
+  const st=document.getElementById('api-status');
+  if(APP.apiKey){inp.value=APP.apiKey;st.textContent='✓ Key gespeichert';st.style.color='var(--green)';}
+  else{st.textContent='Kein Key';st.style.color='var(--t3)';}
 }
 
 function saveApiKey(){
   const val=document.getElementById('api-key-input').value.trim();
-  if(!val){
-    document.getElementById('api-key-status').textContent='Bitte Key eingeben';
-    document.getElementById('api-key-status').style.color='var(--red-text)';
-    return;
-  }
-  APP.apiKey=val;
-  saveApp();
-  document.getElementById('api-key-status').textContent='✓ Gespeichert';
-  document.getElementById('api-key-status').style.color='var(--green-text)';
+  if(!val){document.getElementById('api-status').textContent='Bitte Key eingeben';return;}
+  APP.apiKey=val; saveApp();
+  document.getElementById('api-status').textContent='✓ Gespeichert';
+  document.getElementById('api-status').style.color='var(--green)';
 }
 
 function resetData(){
   if(!confirm('Alle Daten löschen?')) return;
-  localStorage.removeItem('pokerCoachV2');
+  localStorage.removeItem('pcv4');
   APP={hands:0,scores:[],recs:0,skill:{range:0,board:0,player:0,process:0,odds:0},skillN:{range:0,board:0,player:0,process:0,odds:0},history:[],apiKey:null};
-  document.getElementById('api-key-status').textContent='Daten zurückgesetzt';
   document.getElementById('api-key-input').value='';
+  document.getElementById('api-status').textContent='Zurückgesetzt';
+}
+
+// ════════════════════════════════════════════════════════
+// NEW HAND
+// ════════════════════════════════════════════════════════
+function newHand(){
+  // Stop any recording
+  stopRec();
+
+  // Reset game state
+  G = {
+    sc:null, street:'preflop', pot:0, board:[],
+    activePlayers:[], streetLog:[], handLog:[],
+    callAmt:0, betAmt:0, streetRaiser:null,
+    checks:new Set(),
+    recording:false, recSec:0, recTimer:null, recog:null, transcript:'',
+  };
+
+  const sc = genScenario();
+  G.sc = sc;
+  G.pot = sc.pot;
+  G.callAmt = sc.callAmt;
+  G.streetLog = [...sc.preflopLog];
+  if(sc.raiser) G.streetRaiser = sc.raiser;
+
+  // Build active players with live stack/bet tracking
+  G.activePlayers = sc.seats.filter(s=>!s.folded).map(s=>({
+    ...s,
+    currentBet: s.bet, // preflop bets already set
+  }));
+
+  // Reset UI panels
+  document.getElementById('speech-panel').style.display='none';
+  document.getElementById('action-panel').style.display='none';
+  document.getElementById('rv-overlay').classList.remove('show');
+
+  renderTable();
+  renderSitPanel();
+  window.scrollTo(0,0);
 }
 
 function go(s){
   document.querySelectorAll('.screen').forEach(e=>e.classList.remove('active'));
-  document.querySelectorAll('.bn-btn').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('.bn').forEach(e=>e.classList.remove('active'));
   document.getElementById('screen-'+s).classList.add('active');
-  const nav=document.getElementById('nav-'+s);
-  if(nav) nav.classList.add('active');
+  const nb=document.getElementById('nav-'+s);
+  if(nb) nb.classList.add('active');
   if(s==='history') renderHistory();
   if(s==='stats') renderStats();
   if(s==='settings') renderSettings();
 }
 
-// ═══════════════════════════════════════════════════════════
-// NEW HAND
-// ═══════════════════════════════════════════════════════════
-function newHand(){
-  // Reset game state
-  stopRecIfRunning();
-  G={
-    sc:null, street:'preflop', pot:0, board:[], activePlayers:[],
-    streetLog:[], handLog:[], heroFolded:false,
-    raiserOnStreet:null, callAmt:0, streetPhase:'speech',
-    recording:false, recSec:0, recTimer:null, recognition:null, transcript:'',
-    checks:new Set(),
-  };
-
-  const sc=generateScenario();
-  G.sc=sc;
-  G.pot=sc.pot;
-  G.callAmt=sc.callAmt;
-  G.streetLog=[...sc.preflopLog];
-  if(sc.raiser) G.raiserOnStreet=sc.raiser;
-
-  // Active players = non-folded seats
-  G.activePlayers=sc.seats.filter(s=>!s.folded).map(s=>({...s}));
-
-  // Render
-  renderTable();
-  updateStreetBanner();
-  showSpeechPrompt();
-  go('game');
-  window.scrollTo(0,0);
-}
-
-// ═══════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // INIT
-// ═══════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 loadApp();
 newHand();
 
