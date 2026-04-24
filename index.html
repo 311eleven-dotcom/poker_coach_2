@@ -470,7 +470,7 @@ function oppPostflopDecide(s,currentBet,pot){
 }
 
 // ── APPLY ACTION TO SEAT ──────────────────────────────
-function applyAction(s,dec,logAct){
+function applyAction(s,dec){
   if(dec.action==='fold'){
     s.folded=true;s.streetAction='fold';
     G.streetLog.push({pos:s.pos,name:s.player.name,act:'foldet',cls:'c-fold'});
@@ -478,17 +478,26 @@ function applyAction(s,dec,logAct){
     s.streetAction='check';
     G.streetLog.push({pos:s.pos,name:s.player.name,act:'checkt',cls:'c-check'});
   }else if(dec.action==='call'){
+    // Cap call to remaining stack (player may go all-in to call)
     const toCall=Math.min(G.currentBet-s.bet,s.stack);
     s.stack-=toCall;s.bet+=toCall;s.streetAction='call';G.pot+=toCall;
-    G.streetLog.push({pos:s.pos,name:s.player.name,act:'callt',amt:G.currentBet,cls:'c-call'});
+    const isAllin=s.stack===0;
+    const callLabel=isAllin?`callt All-in ${fmt(s.bet)}`:`callt ${fmt(G.currentBet)}`;
+    G.streetLog.push({pos:s.pos,name:s.player.name,act:callLabel,amt:s.bet,cls:'c-call',allin:isAllin});
   }else if(dec.action==='raise'||dec.action==='bet'){
-    const total=dec.amt;
-    const toAdd=Math.min(total-s.bet,s.stack);
-    s.stack-=toAdd;s.bet+=toAdd;G.pot+=toAdd;
-    G.currentBet=s.bet;G.aggressorPos=s.pos;s.streetAction='raise';
+    // Cap intended raise to player's stack
+    const intended=dec.amt;
+    const canAdd=Math.min(intended-s.bet,s.stack);
+    s.stack-=canAdd;s.bet+=canAdd;G.pot+=canAdd;
+    // Actual total bet is s.bet (may be less than intended if short-stacked)
+    const actualTotal=s.bet;
+    const isAllin=s.stack===0;
+    G.currentBet=actualTotal;G.aggressorPos=s.pos;s.streetAction='raise';
     const numRaises=G.streetLog.filter(l=>l.cls==='c-raise').length;
-    const lbl=dec.action==='bet'?'setzt':numRaises===0?'open-raist auf':numRaises===1?'3-bets auf':'4-bets auf';
-    G.streetLog.push({pos:s.pos,name:s.player.name,act:lbl,amt:total,cls:'c-raise'});
+    let lbl=dec.action==='bet'?'setzt':numRaises===0?'open-raist auf':numRaises===1?'3-bets auf':'4-bets auf';
+    if(isAllin) lbl=lbl.replace(' auf','')+' All-in';
+    // Log shows ACTUAL amount put in, not intended
+    G.streetLog.push({pos:s.pos,name:s.player.name,act:lbl,amt:actualTotal,cls:'c-raise',allin:isAllin});
   }
 }
 
@@ -561,16 +570,21 @@ function doHeroAction(action){
   }else if(action==='call'){
     const actual=Math.min(toCall,hs.stack);
     hs.stack-=actual;hs.bet+=actual;hs.streetAction='call';G.pot+=actual;
-    actionStr=`CALL ${fmt(toCall)}`;logAct='callt';logAmt=toCall;logCls='c-call';
+    const callIsAllin=hs.stack===0;
+    actionStr=callIsAllin?`CALL All-in ${fmt(hs.bet)}`:`CALL ${fmt(actual)}`;
+    logAct=callIsAllin?`callt All-in ${fmt(hs.bet)}`:`callt ${fmt(actual)}`;logAmt=hs.bet;logCls='c-call';
   }else if(action==='bet'||action==='raise'){
-    const total=G.betAmt;
-    const toAdd=Math.min(total-hs.bet,hs.stack);
-    hs.stack-=toAdd;hs.bet+=toAdd;G.pot+=toAdd;
+    const intended=G.betAmt;
+    const canAdd=Math.min(intended-hs.bet,hs.stack);
+    hs.stack-=canAdd;hs.bet+=canAdd;G.pot+=canAdd;
     G.currentBet=hs.bet;G.aggressorPos=G.heroPos;hs.streetAction='raise';
+    const actualTotal=hs.bet;
+    const raiseIsAllin=hs.stack===0;
     const numRaises=G.streetLog.filter(l=>l.cls==='c-raise').length;
-    const lbl=action==='bet'?'BET':numRaises===0?'OPEN-RAISE':numRaises===1?'3-BET':'4-BET';
-    actionStr=`${lbl} auf ${fmt(total)} (${(total/bb).toFixed(1)}BB)`;
-    logAct=action==='bet'?'setzt':'raist auf';logAmt=total;logCls='c-raise';
+    let lbl=action==='bet'?'BET':numRaises===0?'OPEN-RAISE':numRaises===1?'3-BET':'4-BET';
+    if(raiseIsAllin)lbl+=' All-in';
+    actionStr=`${lbl} ${fmt(actualTotal)} (${(actualTotal/bb).toFixed(1)}BB)`;
+    logAct=lbl+' '+fmt(actualTotal);logAmt=actualTotal;logCls='c-raise';
   }
 
   G.streetLog.push({pos:G.heroPos,name:'Hero',act:logAct,amt:logAmt,cls:logCls});
@@ -609,10 +623,10 @@ function simulateAfterHero(){
     let dec;
     if(G.street==='preflop') dec=oppPreflopDecide(s,G.currentBet,G.blinds.bb);
     else dec=oppPostflopDecide(s,G.currentBet,G.pot);
-    const before=G.streetLog.length;
     applyAction(s,dec);
     const entry=G.streetLog[G.streetLog.length-1];
-    reactions.push({pos,name:s.player.name,type:s.player.type,act:entry.act+(entry.amt?' '+fmt(entry.amt):''),cls:entry.cls});
+    // entry.act already contains the formatted amount from applyAction
+    reactions.push({pos,name:s.player.name,type:s.player.type,act:entry.act,cls:entry.cls,allin:entry.allin});
   }
 
   // If hero raised, players BEFORE hero who have less than currentBet must react
@@ -737,53 +751,70 @@ function renderTable(){
 function renderSitPanel(){
   const bb=G.blinds.bb,hs=seat(G.heroPos);
   document.getElementById('blind-pill').textContent=G.blinds.lbl;
-  document.getElementById('sit-pot').textContent=`Pot: ${fmt(G.pot)}`;
+  document.getElementById('sit-pot').textContent='Pot: '+fmt(G.pot);
   document.getElementById('sit-street').textContent=cap(G.street);
-  document.getElementById('sit-hand').textContent=`${G.heroHand.desc} · ${G.heroPos}`;
+  document.getElementById('sit-hand').textContent=G.heroHand.desc+' · '+G.heroPos;
 
-  // Build situation description
   const stackBB=Math.round(hs.stack/bb);
-  let desc='';
   const acts=G.streetLog.filter(l=>!l.act.includes('postet'));
-  const raises=G.streetLog.filter(l=>l.cls==='c-raise');
-  const checks=G.streetLog.filter(l=>l.act==='checkt');
-  const bets=G.streetLog.filter(l=>l.cls==='c-raise'&&G.street!=='preflop');
+  const toCall=Math.min(Math.max(0,G.currentBet-hs.bet),hs.stack);
+  const heroAllin=(toCall>0&&toCall>=hs.stack);
+
+  // Build desc: always enumerate every action, then hero's situation
+  let descParts=[];
 
   if(G.street==='preflop'){
-    if(!raises.length){
-      desc=`Alle vor dir haben gefoldet — du bist first-to-act in ${G.heroPos}. Stack: ${fmt(hs.stack)} (${stackBB}BB).`;
-    }else{
-      const last=raises[raises.length-1];
-      const callCnt=G.streetLog.filter(l=>l.cls==='c-call'&&!l.act.includes('postet')).length;
-      desc=`${last.pos} (${last.name}) hat auf ${fmt(last.amt)} ${last.act.includes('3')?'3-gebet':last.act.includes('4')?'4-gebet':'open-geraist'}.`;
-      if(callCnt)desc+=` ${callCnt} Spieler hat${callCnt>1?'...':'...'} gecallt.`;
-      const toCall=G.currentBet-hs.bet;
-      if(toCall>0)desc+=` Zu callen: ${fmt(toCall)}. Pot Odds: ${Math.round(toCall/(G.pot+toCall)*100)}%.`;
-      desc+=` Dein Stack: ${fmt(hs.stack)} (${stackBB}BB).`;
-    }
-  }else{
-    const boardStr=G.board.map(c=>c.r+c.s).join(' ');
-    desc=`Board: ${boardStr}. `;
     if(!acts.length){
-      desc+=`Du bist zuerst am Zug (${G.heroPos}).`;
-    }else if(!bets.length&&checks.length){
-      desc+=`${checks.map(c=>`${c.pos} (${c.name})`).join(', ')} ${checks.length===1?'hat':'haben'} gecheckt. Noch kein Einsatz — du kannst checken oder setzen.`;
-    }else if(bets.length){
-      const last=bets[bets.length-1];
-      if(checks.length)desc+=`${checks.map(c=>c.pos).join(', ')} gecheckt, dann `;
-      desc+=`${last.pos} (${last.name}) hat ${fmt(last.amt)} gesetzt.`;
-      const toCall=G.currentBet-hs.bet;
-      if(toCall>0)desc+=` Zu callen: ${fmt(toCall)}. Pot Odds: ${Math.round(toCall/(G.pot+toCall)*100)}%.`;
+      descParts.push('Alle vor dir haben gefoldet — du bist first-to-act in '+G.heroPos+'.');
+    } else {
+      // List every action before hero
+      acts.forEach(function(e){
+        var suffix=e.allin?' (All-in)':'';
+        descParts.push(e.pos+' ('+e.name+'): '+e.act+suffix);
+      });
     }
-    desc+=` Aktiv: ${activePlayers().filter(s=>!s.isHero).map(s=>`${s.pos} (${TYPE_ABBR[s.player.type]||'?'})`).join(', ')}.`;
+  } else {
+    var boardStr=G.board.map(function(c){return c.r+c.s;}).join(' ');
+    descParts.push('Board: '+boardStr);
+    if(!acts.length){
+      descParts.push('Noch keine Aktionen — du bist zuerst am Zug ('+G.heroPos+').');
+    } else {
+      acts.forEach(function(e){
+        var suffix=e.allin?' (All-in)':'';
+        descParts.push(e.pos+' ('+e.name+'): '+e.act+suffix);
+      });
+    }
   }
-  document.getElementById('sit-desc').textContent=desc;
 
-  // Action log
+  // Hero situation summary
+  if(toCall===0){
+    descParts.push('Du kannst checken oder setzen. Dein Stack: '+fmt(hs.stack)+' ('+stackBB+'BB).');
+  } else {
+    var odds=Math.round(toCall/(G.pot+toCall)*100);
+    descParts.push('Dein Zug: zu callen '+fmt(toCall)+(heroAllin?' → das ist dein All-in':'')+'. Pot Odds: '+odds+'%. Stack nach Call: '+fmt(hs.stack-toCall)+'.');
+  }
+
+  // Count all-ins already in pot (for side pot info)
+  var allins=acts.filter(function(e){return e.allin;});
+  if(allins.length>0){
+    descParts.push('Hinweis: '+allins.length+' Spieler sind bereits All-in ('+allins.map(function(e){return e.pos+' '+fmt(e.amt);}).join(', ')+') — Side Pots möglich.');
+  }
+
+  document.getElementById('sit-desc').textContent=descParts.join(' ');
+
+  // Full action log (all entries, nothing omitted)
   if(!acts.length){
-    document.getElementById('sit-log').innerHTML=`<div style="font-size:11px;color:var(--t3)">SB ${fmt(G.blinds.sb)}, BB ${fmt(G.blinds.bb)} gepostet${G.street==='preflop'?' — noch keine weiteren Aktionen.':'.'}`;
-  }else{
-    document.getElementById('sit-log').innerHTML=acts.map(e=>`<div class="log-row"><span class="log-who">${e.pos} (${e.name})</span><span class="${e.cls}">${e.act}${e.amt?' '+fmt(e.amt):''}</span></div>`).join('');
+    document.getElementById('sit-log').innerHTML='<div style="font-size:11px;color:var(--t3)">SB '+fmt(G.blinds.sb)+', BB '+fmt(G.blinds.bb)+' gepostet'+(G.street==='preflop'?' — noch keine weiteren Aktionen.':'.')+'</div>';
+  } else {
+    document.getElementById('sit-log').innerHTML=
+      // Always show blind posts too for full context
+      G.streetLog.filter(function(e){return e.act.includes('postet');}).map(function(e){
+        return '<div class="log-row" style="opacity:0.5"><span class="log-who">'+e.pos+' ('+e.name+')</span><span class="c-call">'+e.act+' '+fmt(e.amt)+'</span></div>';
+      }).join('')+
+      acts.map(function(e){
+        var allinTag=e.allin?'<span style="font-size:9px;background:#e1f5ee;color:#085041;padding:1px 5px;border-radius:4px;margin-left:4px;font-weight:700">ALL-IN</span>':'';
+        return '<div class="log-row"><span class="log-who">'+e.pos+' ('+e.name+')</span><span class="'+e.cls+'">'+e.act+allinTag+'</span></div>';
+      }).join('');
   }
 }
 
@@ -823,8 +854,10 @@ function showActionPanel(){
 function buildActionPanel(){
   const bb=G.blinds.bb,hs=seat(G.heroPos);
   const heroStack=hs.stack,pot=G.pot;
-  const toCall=Math.max(0,G.currentBet-hs.bet);
-  const isBet=toCall===0;
+  // Cap toCall to hero's available stack (hero may go all-in to call)
+  const rawToCall=Math.max(0,G.currentBet-hs.bet);
+  const toCall=Math.min(rawToCall,heroStack);
+  const isBet=rawToCall===0;
 
   // Title
   let title='';
@@ -875,7 +908,8 @@ function buildActionPanel(){
   }
 
   // Buttons
-  const callLabel=isBet?'Check':`Call ${fmt(toCall)}`;
+  const callIsAllin=(!isBet&&toCall>=heroStack&&heroStack>0);
+  const callLabel=isBet?'Check':callIsAllin?`Call All-in ${fmt(toCall)}`:`Call ${fmt(toCall)}`;
   const heroAction=isBet?'bet':'raise';
   document.getElementById('act-btns').innerHTML=`<button class="act fold" onclick="doHeroAction('fold')">Fold</button><button class="act ${isBet?'check':'call'}" onclick="doHeroAction('${isBet?'check':'call'}')">${callLabel}</button><button class="act raise" id="raise-btn" onclick="doHeroAction('${heroAction}')">${sizeLabel} ${fmt(defB)}</button>`;
 
