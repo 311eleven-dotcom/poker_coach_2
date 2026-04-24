@@ -595,35 +595,45 @@ function BettingRound(actOrder, isPreflop, bb) {
 }
 
 BettingRound.prototype.buildInitialQueue = function() {
-  // Everyone in actOrder who is active (not folded, not allin)
+  // Everyone in actOrder who is active (not folded, not allin).
+  // For preflop, BB has already posted so they act last in the initial
+  // queue — but they ARE included because they may raise.
+  // We include every non-folded, non-allin seat in actOrder sequence.
   var self = this;
   this.toAct = this.actOrder.filter(function(pos){
     var s = G.seats.find(function(s){return s.pos===pos;});
-    return s && !s.folded && !s.allin;
+    if (!s || s.folded || s.allin) return false;
+    // For postflop: always include all active players
+    // For preflop: include all active players (BB included even though they posted)
+    return true;
   });
+  // Debug: log queue to console
+  console.log('BettingRound queue for', G.street, ':', this.toAct.join(', '));
 };
 
 BettingRound.prototype.rebuildQueueAfterRaise = function(raisingPos) {
-  // Everyone who hasn't matched the new bet (excluding raiser)
-  // In order: positions after raiser, then positions before raiser
+  // After a raise, everyone who hasn't matched the new bet must act.
+  // Order: players after the raiser (in actOrder), then players before.
+  // The raiser themselves is excluded.
   var self = this;
-  var allActive = this.actOrder.filter(function(pos){
-    var s = G.seats.find(function(s){return s.pos===pos;});
-    return s && !s.folded && !s.allin && pos !== raisingPos;
-  });
-  // Rotate so that positions AFTER raiser come first
+  var newCurrentBet = this.currentBet; // already updated before this call
+
   var rIdx = this.actOrder.indexOf(raisingPos);
   var after = [], before = [];
-  allActive.forEach(function(pos){
-    var idx = self.actOrder.indexOf(pos);
-    if(idx > rIdx) after.push(pos); else before.push(pos);
-  });
-  // Filter: only those who haven't matched currentBet yet
-  var queue = after.concat(before).filter(function(pos){
+
+  this.actOrder.forEach(function(pos, idx) {
+    if (pos === raisingPos) return;
     var s = G.seats.find(function(s){return s.pos===pos;});
-    return s && s.committed < G.bettingRound.currentBet;
+    if (!s || s.folded || s.allin) return;
+    // Must act if they haven't matched the new bet
+    if (s.committed < newCurrentBet) {
+      if (idx > rIdx) after.push(pos);
+      else before.push(pos);
+    }
   });
-  this.toAct = queue;
+
+  this.toAct = after.concat(before);
+  console.log('Queue after raise by', raisingPos, '(bet='+fmt(newCurrentBet)+'):', this.toAct.join(', '));
 };
 
 // Run the betting round until hero's turn or round is complete
@@ -631,22 +641,30 @@ BettingRound.prototype.run = function() {
   while (this.toAct.length > 0) {
     var pos = this.toAct[0];
     var s = G.seats.find(function(s){return s.pos===pos;});
+
+    // Skip seats that have folded or gone all-in since queue was built
     if (!s || s.folded || s.allin) {
       this.toAct.shift();
       continue;
     }
+
     if (s.isHero) {
-      // Pause and wait for hero input
+      // Pause: show situation to hero and wait for input
       this.heroTurn = true;
       this.computeHeroOptions(s);
       renderAll();
       showSituationPanel();
       return;
     }
-    // NPC acts
-    var dec = this.decideNPC(s);
-    this.applyDecision(s, dec);
+
+    // NPC acts: remove from queue FIRST, then decide and apply
+    // This prevents the shift() from eating the rebuilt queue after a raise
     this.toAct.shift();
+    var dec = this.decideNPC(s);
+    // If it's a raise, applyDecision will call rebuildQueueAfterRaise
+    // which replaces this.toAct entirely - that's correct
+    this.applyDecision(s, dec);
+    // Note: do NOT shift again here - already shifted above
   }
   // Round complete
   this.done = true;
@@ -793,8 +811,12 @@ BettingRound.prototype.heroAct = function(action, raiseTotal) {
   // Record for analysis before applying
   recordHeroDecision(s, dec, action);
 
-  this.applyDecision(s, dec);
+  // Shift hero out of queue BEFORE applyDecision,
+  // because applyDecision may call rebuildQueueAfterRaise (on raise)
+  // which replaces toAct entirely. Shifting after would eat the new queue.
   this.toAct.shift(); // remove hero from queue
+
+  this.applyDecision(s, dec);
 
   if (action === 'fold') {
     this.done = true;
