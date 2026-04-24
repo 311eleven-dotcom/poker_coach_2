@@ -377,10 +377,10 @@ const ARCHETYPES = [
     col:'#0C447C', tc:'#B5D4F4',
     notes:'Callt sehr viel, blufft kaum.',
     pfRaise: {UTG:0.18,'UTG+1':0.22,MP1:0.26,MP2:0.30,HJ:0.36,CO:0.44,BTN:0.60,SB:0.40},
-    vsOpen:   {fold:0.18, call:0.76, raise:0.06},
-    vs3bet:   {fold:0.28, call:0.68, raise:0.04},
-    vs4bet:   {fold:0.40, call:0.58, raise:0.02},
-    vsReraise:{fold:0.45, call:0.53, raise:0.02},
+    vsOpen:   {fold:0.30, call:0.64, raise:0.06},
+    vs3bet:   {fold:0.55, call:0.42, raise:0.03},
+    vs4bet:   {fold:0.68, call:0.30, raise:0.02},
+    vsReraise:{fold:0.75, call:0.23, raise:0.02},
     pfSizing: function(bb){ return Math.max(bb*2, Math.round(bb*rnd(25,35)/10/100)*100); },
     raiseSizing: function(facing){ return Math.round(facing*rnd(25,32)/10/100)*100; },
     pf: { checkFreq:0.68, betFreq:0.32, betPct:0.48,
@@ -392,10 +392,10 @@ const ARCHETYPES = [
     col:'#5F5E5A', tc:'#D3D1C7',
     notes:'Limpt viel, wenig Aggression.',
     pfRaise: {UTG:0.08,'UTG+1':0.10,MP1:0.13,MP2:0.16,HJ:0.20,CO:0.28,BTN:0.42,SB:0.32},
-    vsOpen:   {fold:0.32, call:0.64, raise:0.04},
-    vs3bet:   {fold:0.52, call:0.46, raise:0.02},
-    vs4bet:   {fold:0.62, call:0.37, raise:0.01},
-    vsReraise:{fold:0.70, call:0.29, raise:0.01},
+    vsOpen:   {fold:0.42, call:0.54, raise:0.04},
+    vs3bet:   {fold:0.65, call:0.33, raise:0.02},
+    vs4bet:   {fold:0.75, call:0.24, raise:0.01},
+    vsReraise:{fold:0.82, call:0.17, raise:0.01},
     pfSizing: function(bb){ return Math.max(bb*2, Math.round(bb*rnd(25,38)/10/100)*100); },
     raiseSizing: function(facing){ return Math.round(facing*rnd(25,32)/10/100)*100; },
     pf: { checkFreq:0.74, betFreq:0.26, betPct:0.44,
@@ -452,10 +452,10 @@ const ARCHETYPES = [
     col:'#993556', tc:'#F4C0D1',
     notes:'Breite Calls, kaum Aggression postflop.',
     pfRaise: {UTG:0.14,'UTG+1':0.18,MP1:0.22,MP2:0.26,HJ:0.32,CO:0.40,BTN:0.58,SB:0.38},
-    vsOpen:   {fold:0.26, call:0.68, raise:0.06},
-    vs3bet:   {fold:0.36, call:0.60, raise:0.04},
-    vs4bet:   {fold:0.46, call:0.52, raise:0.02},
-    vsReraise:{fold:0.52, call:0.46, raise:0.02},
+    vsOpen:   {fold:0.38, call:0.56, raise:0.06},
+    vs3bet:   {fold:0.62, call:0.34, raise:0.04},
+    vs4bet:   {fold:0.72, call:0.26, raise:0.02},
+    vsReraise:{fold:0.78, call:0.20, raise:0.02},
     pfSizing: function(bb){ return Math.max(bb*2, Math.round(bb*rnd(25,38)/10/100)*100); },
     raiseSizing: function(facing){ return Math.round(facing*rnd(25,32)/10/100)*100; },
     pf: { checkFreq:0.62, betFreq:0.38, betPct:0.50,
@@ -831,6 +831,43 @@ BettingRound.prototype.heroAct = function(action, raiseTotal) {
 // GAME FLOW
 // ════════════════════════════════════════════════════
 
+// ════════════════════════════════════════════════════
+// DECK & CARD UTILITIES
+// ════════════════════════════════════════════════════
+var RANKS = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
+var SUITS = [
+  {s:'♠',red:false},{s:'♥',red:true},
+  {s:'♦',red:true},{s:'♣',red:false}
+];
+
+function buildDeck() {
+  var deck = [];
+  RANKS.forEach(function(r) {
+    SUITS.forEach(function(suit) {
+      deck.push({r:r, s:suit.s, red:suit.red});
+    });
+  });
+  // Shuffle
+  for (var i=deck.length-1;i>0;i--) {
+    var j=Math.floor(Math.random()*(i+1));
+    var t=deck[i];deck[i]=deck[j];deck[j]=t;
+  }
+  return deck;
+}
+
+function dealTwo(deck) {
+  return [deck.pop(), deck.pop()];
+}
+
+function cardStr(c) {
+  return c.r + c.s;
+}
+
+function handStr(cards) {
+  if (!cards || cards.length < 2) return '?? ??';
+  return cardStr(cards[0]) + ' ' + cardStr(cards[1]);
+}
+
 function newHand() {
   stopRec();
   var blinds = pick(BLINDS_LIST);
@@ -839,8 +876,11 @@ function newHand() {
   var heroPos = pick(HERO_POS_OPTIONS);
   var shuffled = shuf(ARCHETYPES);
 
+  // Generate a full deck and deal hole cards to each seat
+  var deck = buildDeck();
   var seats = POS_ORDER.map(function(pos, i) {
     var arch = shuffled[i];
+    var holeCards = pos === heroPos ? null : dealTwo(deck); // hero gets chosen hand
     return {
       pos: pos,
       archetype: arch,
@@ -849,7 +889,8 @@ function newHand() {
       allin: false,
       isHero: pos === heroPos,
       dealer: pos === 'BTN',
-      committed: 0 // chips in this street
+      committed: 0, // chips in this street
+      holeCards: holeCards  // null for hero (shown separately), cards for opponents
     };
   });
 
@@ -1338,7 +1379,18 @@ function finishHand(){
   document.getElementById('action-panel').style.display='none';
   document.getElementById('rv-overlay').classList.add('show');
   document.getElementById('rv-title').textContent='Hand-Auswertung: '+G.heroHand.desc+' in '+G.heroPos;
-  document.getElementById('rv-sub').textContent=G.blinds.lbl+' · '+G.handLog.length+' Entscheid'+(G.handLog.length!==1?'e':'')+' · Board: '+(G.board.map(function(c){return c.r+c.s;}).join(' ')||'—');
+
+  // Build showdown info: players who didn't fold
+  var showdown = G.seats.filter(function(s){return !s.isHero && !s.folded && s.holeCards;});
+  var showdownStr = showdown.length > 0
+    ? showdown.map(function(s){return s.pos+' ('+s.archetype.name+'): '+handStr(s.holeCards);}).join(' · ')
+    : 'Alle Gegner gefoldet';
+
+  var boardStr = G.board.map(function(c){return c.r+c.s;}).join(' ') || '—';
+  document.getElementById('rv-sub').textContent=G.blinds.lbl+' · '+G.handLog.length+' Entscheid'+(G.handLog.length!==1?'e':'')+' · Board: '+boardStr;
+
+  // Store showdown for renderReview
+  G.showdown = {players: showdown, str: showdownStr};
   document.getElementById('rv-pills').innerHTML='';
   document.getElementById('rv-body').innerHTML='<div class="loading"><div class="spinner"></div><br>Claude analysiert die gesamte Hand…</div>';
   requestAnalysis();
@@ -1350,7 +1402,8 @@ async function requestAnalysis(){
   }).join('\n---\n');
 
   var oppInfo = G.seats.filter(function(s){return !s.isHero;}).map(function(s){
-    return s.pos+': '+s.archetype.name+' ('+s.archetype.type+', VPIP '+s.archetype.vpip+'%, PFR '+s.archetype.pfr+'%, AF '+s.archetype.af+')';
+    var cards = (!s.folded && s.holeCards) ? ' | Karten: '+handStr(s.holeCards) : (s.folded ? ' | gefoldet' : '');
+    return s.pos+': '+s.archetype.name+' ('+s.archetype.type+', VPIP '+s.archetype.vpip+'%, PFR '+s.archetype.pfr+'%, AF '+s.archetype.af+')'+cards;
   }).join('\n');
 
   var prompt = 'Du bist ein erfahrener No-Limit Hold\'em MTT-Coach. Analysiere diese vollständige Hand. Spieler: zwischen Recreational und Semi-Pro, Live MTT.\n\nHAND: '+G.heroHand.desc+' | Position: '+G.heroPos+' | Blinds: '+G.blinds.lbl+'\nBoard: '+(G.board.map(function(c){return c.r+c.s;}).join(' ')||'(kein Board)')+'\n\nGEGNER:\n'+oppInfo+'\n\nENTSCHEIDE:\n'+decisionsText+'\n\nAnalysiere jeden Entscheid einzeln, beziehe Spielertypen explizit ein.\n\nAntworte NUR als JSON ohne Backticks:\n{"gesamtscore":<0-100>,"zusammenfassung":"<2-3 Sätze>","entscheide":[{"street":"<street>","aktion":"<kurz>","score":<0-100>,"entscheidung":"<optimal|gut|suboptimal|fehler>","feedback":"<3-4 Sätze>","sprachnotiz":"<1 Satz>"}],"staerken":"<Text>","schwaechen":"<Text>","key_lesson":"<1 klarer Satz>","skill_scores":{"range":<0-100>,"board":<0-100>,"player":<0-100>,"process":<0-100>,"odds":<0-100>},"tags":["<tag1>","<tag2>","<tag3>"]}';
@@ -1381,7 +1434,21 @@ function renderReview(r){
   document.getElementById('rv-pills').innerHTML=ph;
   var dh=(r.entscheide||[]).map(function(d){var dc=scol(d.score),ec2=ecol(d.entscheidung);return '<div class="rv-dec"><div class="rv-dec-head"><span class="rv-dec-st">'+cap(d.street)+'</span><span class="rv-dec-sc" style="background:'+dc.bg+';color:'+dc.tc+'">'+Math.round(d.score)+'/100</span></div><div class="rv-dec-act"><span style="font-size:10px;padding:1px 7px;border-radius:6px;background:'+ec2.bg+';color:'+ec2.tc+';font-weight:700">'+(d.entscheidung||'').toUpperCase()+'</span><span style="margin-left:6px">'+d.aktion+'</span></div><div class="rv-dec-fb">'+d.feedback+(d.sprachnotiz?'<br><span style="color:var(--t3);font-size:11px;font-style:italic">Sprachnotiz: '+d.sprachnotiz+'</span>':'')+'</div></div>';}).join('');
   var tags=(r.tags||[]).map(function(t){return '<span class="rv-tag">'+t+'</span>';}).join('');
-  document.getElementById('rv-body').innerHTML='<div class="rv-sec"><div class="rv-sec-t">Zusammenfassung</div><div class="rv-sec-b">'+(r.zusammenfassung||'')+'</div></div>'+dh+'<div class="rv-sec"><div class="rv-sec-t">Stärken</div><div class="rv-sec-b">'+(r.staerken||'')+'</div></div><div class="rv-sec"><div class="rv-sec-t">Verbesserung</div><div class="rv-sec-b">'+(r.schwaechen||'')+'</div></div><div class="rv-sec"><div class="rv-sec-t">Key Lesson</div><div class="rv-sec-b" style="font-weight:700;color:var(--text)">'+(r.key_lesson||'')+'</div></div><div class="rv-tags">'+tags+'</div><div class="rv-btns"><button class="rv-btn" onclick="document.getElementById(\'rv-overlay\').classList.remove(\'show\')">Schliessen</button><button class="rv-btn primary" onclick="document.getElementById(\'rv-overlay\').classList.remove(\'show\');newHand()">Neue Hand ▶</button></div>';
+  // Build showdown cards HTML
+  var showdownHtml = '';
+  if (G.showdown && G.showdown.players.length > 0) {
+    showdownHtml += '<div class="rv-sec"><div class="rv-sec-t">Aufgedeckte Karten (Showdown)</div><div class="rv-sec-b">';
+    G.showdown.players.forEach(function(s) {
+      var cards = s.holeCards || [];
+      var cHtml = cards.map(function(c){return '<span style="font-size:13px;font-weight:700;color:'+(c.red?'#c0392b':'#111')+';background:#fff;border:0.5px solid #ccc;padding:2px 6px;border-radius:4px;margin-right:3px;">'+c.r+c.s+'</span>';}).join('');
+      showdownHtml += '<div style="margin-bottom:6px;display:flex;align-items:center;gap:8px;"><span style="font-size:11px;font-weight:700;color:var(--text);min-width:120px;">'+s.pos+' ('+s.archetype.name+')</span>'+cHtml+'<span style="font-size:10px;color:var(--t3);margin-left:4px;">'+s.archetype.type+'</span></div>';
+    });
+    showdownHtml += '</div></div>';
+  } else {
+    showdownHtml = '<div class="rv-sec"><div class="rv-sec-t">Showdown</div><div class="rv-sec-b" style="color:var(--t3)">Alle Gegner haben gefoldet.</div></div>';
+  }
+
+  document.getElementById('rv-body').innerHTML='<div class="rv-sec"><div class="rv-sec-t">Zusammenfassung</div><div class="rv-sec-b">'+(r.zusammenfassung||'')+'</div></div>'+dh+'<div class="rv-sec"><div class="rv-sec-t">Stärken</div><div class="rv-sec-b">'+(r.staerken||'')+'</div></div><div class="rv-sec"><div class="rv-sec-t">Verbesserung</div><div class="rv-sec-b">'+(r.schwaechen||'')+'</div></div><div class="rv-sec"><div class="rv-sec-t">Key Lesson</div><div class="rv-sec-b" style="font-weight:700;color:var(--text)">'+(r.key_lesson||'')+showdownHtml+'<div class="rv-tags">'+tags+'</div><div class="rv-btns"><button class="rv-btn" onclick="document.getElementById(\'rv-overlay\').classList.remove(\'show\')">Schliessen</button><button class="rv-btn primary" onclick="document.getElementById(\'rv-overlay\').classList.remove(\'show\');newHand()">Neue Hand ▶</button></div>';
 }
 
 // ════════════════════════════════════════════════════
