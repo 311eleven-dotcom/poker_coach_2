@@ -962,24 +962,52 @@ function startBettingRound() {
 function onBettingRoundComplete() {
   var activeLeft = G.seats.filter(function(s){return !s.folded && !s.isHero;});
   if (activeLeft.length === 0) {
-    // Hero wins uncontested or everyone folded
+    // Everyone folded — hero wins
+    G.heroWins = true;
+    G.runoutDone = true;
+    runOutBoard();
     finishHand();
     return;
   }
-  // Check if only all-ins remain (go to runout)
+
+  // Check if it's all-in situation: nobody can act anymore
   var canStillAct = G.seats.filter(function(s){return !s.folded && !s.allin;});
   var streets = ['preflop','flop','turn','river'];
   var idx = streets.indexOf(G.street);
-  if (idx >= 3 || canStillAct.length <= 1) {
+
+  if (canStillAct.length <= 1) {
+    // All-in situation: run out remaining streets automatically
+    runOutBoard();
     finishHand();
     return;
   }
-  // Advance to next street
+
+  if (idx >= 3) {
+    // River complete — finish
+    finishHand();
+    return;
+  }
+
+  // Advance to next street normally
   G.street = streets[idx+1];
-  if (G.street==='flop') G.board = [].concat(G.flop);
-  if (G.street==='turn') G.board = [].concat(G.flop, [G.turn]);
-  if (G.street==='river') G.board = [].concat(G.flop, [G.turn, G.river]);
+  dealStreet(G.street);
   startBettingRound();
+}
+
+function dealStreet(street) {
+  if (street==='flop') G.board = [].concat(G.flop);
+  else if (street==='turn') G.board = [].concat(G.flop, [G.turn]);
+  else if (street==='river') G.board = [].concat(G.flop, [G.turn, G.river]);
+}
+
+function runOutBoard() {
+  // Deal all remaining streets automatically (all-in runout)
+  var streets = ['preflop','flop','turn','river'];
+  var idx = streets.indexOf(G.street);
+  var remaining = streets.slice(idx+1);
+  remaining.forEach(function(s){ dealStreet(s); G.street = s; });
+  // Full board is now dealt
+  renderTableOnly();
 }
 
 function recordHeroDecision(s, dec, action) {
@@ -1387,10 +1415,12 @@ function finishHand(){
     : 'Alle Gegner gefoldet';
 
   var boardStr = G.board.map(function(c){return c.r+c.s;}).join(' ') || '—';
-  document.getElementById('rv-sub').textContent=G.blinds.lbl+' · '+G.handLog.length+' Entscheid'+(G.handLog.length!==1?'e':'')+' · Board: '+boardStr;
+  var subText = G.blinds.lbl+' · '+G.handLog.length+' Entscheid'+(G.handLog.length!==1?'e':'')+' · Board: '+boardStr;
+  if (showdown.length > 0) subText += ' · Showdown!';
+  document.getElementById('rv-sub').textContent = subText;
 
   // Store showdown for renderReview
-  G.showdown = {players: showdown, str: showdownStr};
+  G.showdown = {players: showdown, str: showdownStr, board: G.board};
   document.getElementById('rv-pills').innerHTML='';
   document.getElementById('rv-body').innerHTML='<div class="loading"><div class="spinner"></div><br>Claude analysiert die gesamte Hand…</div>';
   requestAnalysis();
@@ -1406,7 +1436,30 @@ async function requestAnalysis(){
     return s.pos+': '+s.archetype.name+' ('+s.archetype.type+', VPIP '+s.archetype.vpip+'%, PFR '+s.archetype.pfr+'%, AF '+s.archetype.af+')'+cards;
   }).join('\n');
 
-  var prompt = 'Du bist ein erfahrener No-Limit Hold\'em MTT-Coach. Analysiere diese vollständige Hand. Spieler: zwischen Recreational und Semi-Pro, Live MTT.\n\nHAND: '+G.heroHand.desc+' | Position: '+G.heroPos+' | Blinds: '+G.blinds.lbl+'\nBoard: '+(G.board.map(function(c){return c.r+c.s;}).join(' ')||'(kein Board)')+'\n\nGEGNER:\n'+oppInfo+'\n\nENTSCHEIDE:\n'+decisionsText+'\n\nAnalysiere jeden Entscheid einzeln, beziehe Spielertypen explizit ein.\n\nAntworte NUR als JSON ohne Backticks:\n{"gesamtscore":<0-100>,"zusammenfassung":"<2-3 Sätze>","entscheide":[{"street":"<street>","aktion":"<kurz>","score":<0-100>,"entscheidung":"<optimal|gut|suboptimal|fehler>","feedback":"<3-4 Sätze>","sprachnotiz":"<1 Satz>"}],"staerken":"<Text>","schwaechen":"<Text>","key_lesson":"<1 klarer Satz>","skill_scores":{"range":<0-100>,"board":<0-100>,"player":<0-100>,"process":<0-100>,"odds":<0-100>},"tags":["<tag1>","<tag2>","<tag3>"]}';
+  // Build sizing context for better analysis
+  var sizingContext = '';
+  G.handLog.forEach(function(d) {
+    if (d.context.numRaises > 0 && d.action.indexOf('3-BET') >= 0) {
+      sizingContext += 'Hero hat 3-gebet um gegen den Opener zu isolieren. ';
+    }
+  });
+
+  var prompt = 'Du bist ein erfahrener No-Limit Hold\'em MTT-Coach. Analysiere diese vollständige Hand präzise und korrekt.\n'
+    + 'Spieler-Niveau: zwischen Recreational und Semi-Pro, Live MTT.\n\n'
+    + 'WICHTIGE COACHING-REGELN die du strikt einhalten musst:\n'
+    + '1. KK, AA preflop All-in ist IMMER optimal — niemals kritisieren, egal gegen wen.\n'
+    + '2. Ein grosser 3-Bet zur Isolation gegen einen Aggressor ist KORREKT — nicht als Overcommit kritisieren.\n'
+    + '3. Beachte den Spielertyp des Gegners: gegen einen LAG/Maniac ist looser Call/3-Bet richtig.\n'
+    + '4. Sizing: zu kleine 3-Bets (unter 3x) laden mehrere Spieler ein — das ist ein Fehler. Grosse 3-Bets zur Isolation sind richtig.\n'
+    + '5. Beurteile Entscheide nach dem EV zum Zeitpunkt der Entscheidung — nicht nach Outcome.\n\n'
+    + 'HAND: '+G.heroHand.desc+' | Position: '+G.heroPos+' | Blinds: '+G.blinds.lbl+'\n'
+    + 'Board: '+(G.board.map(function(c){return c.r+c.s;}).join(' ')||'(kein Board)')+'\n'
+    + (sizingContext ? 'Kontext: '+sizingContext+'\n' : '')
+    + '\nGEGNER (mit aufgedeckten Karten falls Showdown):\n'+oppInfo
+    + '\n\nENTSCHEIDE:\n'+decisionsText
+    + '\n\nAnalysiere jeden Entscheid einzeln. Beziehe Spielertypen und aufgedeckte Karten explizit ein.'
+    + '\nBei einem All-in preflop mit starker Hand (KK, AA, QQ, AK): score = 95-100, entscheidung = optimal.'
+    + '\n\nAntworte NUR als JSON ohne Backticks:\n{"gesamtscore":<0-100>,"zusammenfassung":"<2-3 Sätze>","entscheide":[{"street":"<street>","aktion":"<kurz>","score":<0-100>,"entscheidung":"<optimal|gut|suboptimal|fehler>","feedback":"<3-4 Sätze konkret, beziehe Spielertyp und Gegner-Karten ein>","sprachnotiz":"<1 Satz>"}],"staerken":"<Text>","schwaechen":"<Text>","key_lesson":"<1 klarer Satz>","skill_scores":{"range":<0-100>,"board":<0-100>,"player":<0-100>,"process":<0-100>,"odds":<0-100>},"tags":["<tag1>","<tag2>","<tag3>"]}';
 
   if(!APP.apiKey){showNoKey();return;}
   try{
@@ -1437,15 +1490,39 @@ function renderReview(r){
   // Build showdown cards HTML
   var showdownHtml = '';
   if (G.showdown && G.showdown.players.length > 0) {
-    showdownHtml += '<div class="rv-sec"><div class="rv-sec-t">Aufgedeckte Karten (Showdown)</div><div class="rv-sec-b">';
+    // Show board
+    var boardCards = (G.showdown.board||[]).map(function(c){
+      return '<span style="font-size:13px;font-weight:700;color:'+(c.red?'#c0392b':'#111')+';background:#fff;border:0.5px solid #ccc;padding:2px 6px;border-radius:4px;margin-right:3px;">'+c.r+c.s+'</span>';
+    }).join('');
+    if (!boardCards) boardCards = '<span style="color:var(--t3)">Preflop All-in (kein Board)</span>';
+
+    showdownHtml += '<div class="rv-sec"><div class="rv-sec-t">Showdown — Board</div>';
+    showdownHtml += '<div style="margin-bottom:10px;">'+boardCards+'</div>';
+
+    // Hero cards
+    var hc = G.heroHand;
+    showdownHtml += '<div style="margin-bottom:6px;display:flex;align-items:center;gap:8px;">'
+      +'<span style="font-size:11px;font-weight:700;color:var(--green);min-width:120px;">Du (Hero) '+G.heroPos+'</span>'
+      +'<span style="font-size:13px;font-weight:700;color:'+(hc.c1==='red'?'#c0392b':'#111')+';background:#fff;border:0.5px solid #ccc;padding:2px 6px;border-radius:4px;margin-right:3px;">'+hc.r1+hc.s1+'</span>'
+      +'<span style="font-size:13px;font-weight:700;color:'+(hc.c2==='red'?'#c0392b':'#111')+';background:#fff;border:0.5px solid #ccc;padding:2px 6px;border-radius:4px;margin-right:3px;">'+hc.r2+hc.s2+'</span>'
+      +'</div>';
+
+    // Opponent cards
     G.showdown.players.forEach(function(s) {
       var cards = s.holeCards || [];
-      var cHtml = cards.map(function(c){return '<span style="font-size:13px;font-weight:700;color:'+(c.red?'#c0392b':'#111')+';background:#fff;border:0.5px solid #ccc;padding:2px 6px;border-radius:4px;margin-right:3px;">'+c.r+c.s+'</span>';}).join('');
-      showdownHtml += '<div style="margin-bottom:6px;display:flex;align-items:center;gap:8px;"><span style="font-size:11px;font-weight:700;color:var(--text);min-width:120px;">'+s.pos+' ('+s.archetype.name+')</span>'+cHtml+'<span style="font-size:10px;color:var(--t3);margin-left:4px;">'+s.archetype.type+'</span></div>';
+      var cHtml = cards.map(function(c){
+        return '<span style="font-size:13px;font-weight:700;color:'+(c.red?'#c0392b':'#111')+';background:#fff;border:0.5px solid #ccc;padding:2px 6px;border-radius:4px;margin-right:3px;">'+c.r+c.s+'</span>';
+      }).join('');
+      showdownHtml += '<div style="margin-bottom:6px;display:flex;align-items:center;gap:8px;">'
+        +'<span style="font-size:11px;font-weight:700;color:var(--text);min-width:120px;">'+s.pos+' ('+s.archetype.name+')</span>'
+        +cHtml
+        +'<span style="font-size:10px;color:var(--t3);margin-left:4px;">'+s.archetype.type+'</span>'
+        +'</div>';
     });
+    showdownHtml += '<div style="font-size:11px;color:var(--t3);margin-top:6px;padding-top:6px;border-top:0.5px solid var(--bo)">Die Claude-Analyse berücksichtigt diese Karten beim Feedback.</div>';
     showdownHtml += '</div></div>';
   } else {
-    showdownHtml = '<div class="rv-sec"><div class="rv-sec-t">Showdown</div><div class="rv-sec-b" style="color:var(--t3)">Alle Gegner haben gefoldet.</div></div>';
+    showdownHtml = '<div class="rv-sec"><div class="rv-sec-t">Ergebnis</div><div class="rv-sec-b" style="color:var(--green);font-weight:600">✓ Alle Gegner haben gefoldet — Hero gewinnt den Pot.</div></div>';
   }
 
   document.getElementById('rv-body').innerHTML='<div class="rv-sec"><div class="rv-sec-t">Zusammenfassung</div><div class="rv-sec-b">'+(r.zusammenfassung||'')+'</div></div>'+dh+'<div class="rv-sec"><div class="rv-sec-t">Stärken</div><div class="rv-sec-b">'+(r.staerken||'')+'</div></div><div class="rv-sec"><div class="rv-sec-t">Verbesserung</div><div class="rv-sec-b">'+(r.schwaechen||'')+'</div></div><div class="rv-sec"><div class="rv-sec-t">Key Lesson</div><div class="rv-sec-b" style="font-weight:700;color:var(--text)">'+(r.key_lesson||'')+showdownHtml+'<div class="rv-tags">'+tags+'</div><div class="rv-btns"><button class="rv-btn" onclick="document.getElementById(\'rv-overlay\').classList.remove(\'show\')">Schliessen</button><button class="rv-btn primary" onclick="document.getElementById(\'rv-overlay\').classList.remove(\'show\');newHand()">Neue Hand ▶</button></div>';
